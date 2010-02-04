@@ -1,6 +1,6 @@
 /*******************************************************************************
     PRODIGAL (PROkaryotic DynamIc Programming Genefinding ALgorithm)
-    Copyright (C) 2007-2010 University of Tennessee / UT-Battelle
+    Copyright (C) 2007-2009 University of Tennessee / UT-Battelle
 
     Code Author:  Doug Hyatt
 
@@ -193,18 +193,13 @@ void tweak_final_starts(struct _gene *genes, int ng, struct _node *nod,
 }
 
 /* Print the genes.  'Flag' indicates which format to use. */
-void print_genes(FILE *fp, struct _gene *genes, int ng, struct _node *nod, 
-                 int slen, int flag, int sctr) {
+void print_genes(struct _gene *genes, int ng, struct _node *nod, int slen, 
+                 int flag) {
   int i;
   char left[50], right[50];
 
   strcpy(left, "");
   strcpy(right, "");
-
-  if(flag == 0) fprintf(fp, "DEFINITION           Prodigal_Seq_%d (%d bp)\n", 
-                        sctr, slen);
-  else if(flag == 1) fprintf(fp, "sequence_prodigal=%d|%d\n", sctr, slen);
-  else if(flag == 2) fprintf(fp, "# Prodigal_Seq_%d (%d bp)\n", sctr, slen);
 
   for(i = 0; i < ng; i++) {
     if(nod[genes[i].start_ndx].strand == 1) {
@@ -214,15 +209,14 @@ void print_genes(FILE *fp, struct _gene *genes, int ng, struct _node *nod,
       if(nod[genes[i].stop_ndx].edge == 1) sprintf(right, ">%d", 
          genes[i].end);
       else sprintf(right, "%d", genes[i].end);
-      if(flag == 0) fprintf(fp, "     CDS             %s..%s\n", left, right);
+      if(flag == 0) printf("     CDS             %s..%s\n", left, right);
       if(flag == 1)
-        fprintf(fp, "gene_prodigal=%d|1|f|y|y|3|0|%d|%d|%d|%d|-1|-1|1.0\n", i+1,
+        printf("gene_prodigal=%d|1|f|y|y|3|0|%d|%d|%d|%d|-1|-1|1.0\n", i+1,
                 genes[i].begin, genes[i].end, genes[i].begin, genes[i].end);
-      if(flag == 2) fprintf(fp, ">%d_%d_%d_+\n", i+1, genes[i].begin, 
-                            genes[i].end);
+      if(flag == 2) printf(">%d_%d_%d_+\n", i+1, genes[i].begin, genes[i].end);
       if(flag == 3)
-        fprintf(fp, "Prod_Seq_%d\tProdigal\tCDS\t%d\t%d\t.\t+\t0\n", sctr, 
-                genes[i].begin, genes[i].end);
+        printf("SEQ\tProdigal\tCDS\t%d\t%d\t.\t+\t0\n", genes[i].begin, 
+               genes[i].end);
     }
     else {
       if(nod[genes[i].stop_ndx].edge == 1) sprintf(left, "<%d", 
@@ -231,30 +225,33 @@ void print_genes(FILE *fp, struct _gene *genes, int ng, struct _node *nod,
       if(nod[genes[i].start_ndx].edge == 1) sprintf(right, ">%d", 
          genes[i].end);
       else sprintf(right, "%d", genes[i].end);
-      if(flag == 0) fprintf(fp, "     CDS             complement(%s..%s)\n", 
-                            left, right);
+      if(flag == 0) printf("     CDS             complement(%s..%s)\n", left,
+                           right);
       if(flag == 1)
-        fprintf(fp, "gene_prodigal=%d|1|r|y|y|3|0|%d|%d|%d|%d|-1|-1|1.0\n", i+1,
+        printf("gene_prodigal=%d|1|r|y|y|3|0|%d|%d|%d|%d|-1|-1|1.0 \n", i+1,
                slen+1-genes[i].end, slen+1-genes[i].begin,
                slen+1-genes[i].end, slen+1-genes[i].begin);
-      if(flag == 2) fprintf(fp, ">%d_%d_%d_-\n", i+1, genes[i].begin, 
-                            genes[i].end);
+      if(flag == 2) printf(">%d_%d_%d_-\n", i+1, genes[i].begin, genes[i].end);
       if(flag == 3)
-        fprintf(fp, "Prod_Seq_%d\tProdigal\tCDS\t%d\t%d\t.\t-\t0\n", sctr, 
-                genes[i].begin, genes[i].end);
+        printf("SEQ\tProdigal\tCDS\t%d\t%d\t.\t-\t0\n", genes[i].begin,
+               genes[i].end);
     }
   }
-
-  if(flag == 0) fprintf(fp, "//\n");
 }
 
 /* Print the gene translations */
-void write_translations(FILE *fh, struct _gene *genes, int ng, struct 
+void write_translations(char *tfile, struct _gene *genes, int ng, struct 
                         _node *nod, unsigned char *seq, unsigned char *rseq, 
-                        int slen, struct _training *tinf, int sctr) {
+                        int slen, struct _training *tinf) {
   int i, j;
+  FILE *fh;
 
-  fprintf(fh, "# Prodigal Sequence %d\n", sctr);
+  fh = fopen(tfile, "w");
+  if(fh == NULL) {
+    fprintf(stderr, "Error writing translation file.\n");
+    exit(1);
+  }
+
   for(i = 0; i < ng; i++) {
     if(nod[genes[i].start_ndx].strand == 1) {
       fprintf(fh, ">Prodigal Gene %d # %d # %d # 1\n", i+1, genes[i].begin,

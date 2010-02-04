@@ -1,6 +1,6 @@
 /*******************************************************************************
     PRODIGAL (PROkaryotic DynamIc Programming Genefinding ALgorithm)
-    Copyright (C) 2007-2010 University of Tennessee / UT-Battelle
+    Copyright (C) 2007-2009 University of Tennessee / UT-Battelle
 
     Code Author:  Doug Hyatt
 
@@ -38,8 +38,8 @@ int add_genes(struct _gene *, struct _node *, int);
 void tweak_final_starts(struct _gene *, int, struct _node *, int, struct
                        _training *);
 
-void print_genes(FILE *, struct _gene *, int, struct _node *, int, int, int);
-void write_translations(FILE *, struct _gene *, int, struct _node *, 
+void print_genes(struct _gene *, int, struct _node *, int, int);
+void write_translations(char *, struct _gene *, int, struct _node *, 
                         unsigned char *, unsigned char *, int, 
-                        struct _training *, int);
+                        struct _training *);
 #endif

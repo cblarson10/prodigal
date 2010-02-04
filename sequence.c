@@ -1,6 +1,6 @@
 /*******************************************************************************
     PRODIGAL (PROkaryotic DynamIc Programming Genefinding ALgorithm)
-    Copyright (C) 2007-2010 University of Tennessee / UT-Battelle
+    Copyright (C) 2007-2009 University of Tennessee / UT-Battelle
 
     Code Author:  Doug Hyatt
 
@@ -28,15 +28,15 @@
   parser, but, to be safe, FASTA should generally be preferred.
 *******************************************************************************/
 
-int read_seq_single(FILE *fp, unsigned char *seq, double *gc, int do_mask, mask
-              *mlist, int *nm) {
+int read_seq(FILE *fp, unsigned char *seq, double *gc, int do_mask, mask
+              *mlist, int *nm, int flag) {
   char line[MAX_LINE+1];
   int hdr = 0, fhdr = 0, bctr = 0, len = 0, wrn = 0;
   int gc_cont = 0, mask_beg = -1;
   unsigned int i, gapsize = 0;
 
   line[MAX_LINE] = '\0';
-  while(fgets(line, MAX_LINE, fp) != NULL) {
+  while(fgets(line, MAX_LINE, stdin) != NULL) {
     if(hdr == 0 && line[strlen(line)-1] != '\n' && wrn == 0) {
       wrn = 1;
       fprintf(stderr, "Warning: saw non-sequence line longer than ");
@@ -46,11 +46,16 @@ int read_seq_single(FILE *fp, unsigned char *seq, double *gc, int do_mask, mask
     if(line[0] == '>' || (line[0] == 'S' && line[1] == 'Q') ||
        (strncmp(line, "ORIGIN", 6) == 0)) {
       hdr = 1;
-      if(fhdr > 0) {
+      if(flag == 1 && fhdr > 0) {
         for(i = 0; i < 12; i++) {
           if(i%4 == 0 || i%4 == 1) { set(seq, bctr); set(seq, bctr+1); }
           bctr+=2; len++;
         }
+      }
+      if(flag == 0 && fhdr > 0) {
+        fprintf(stderr, "Warning: saw second sequence header (only ");
+        fprintf(stderr, "analyzing the first sequence)\n");
+        break;
       }
       fhdr++;
     }
@@ -61,7 +66,7 @@ int read_seq_single(FILE *fp, unsigned char *seq, double *gc, int do_mask, mask
         if(gapsize < 1 || gapsize > MAX_LINE) {
           fprintf(stderr, "Error: gap size in gbk file can't exceed line");
           fprintf(stderr, " size.\n");
-          exit(51);
+          exit(1);
         }
         for(i = 0; i < gapsize; i++) line[i] = 'n';
         line[i] = '\0';
@@ -73,7 +78,7 @@ int read_seq_single(FILE *fp, unsigned char *seq, double *gc, int do_mask, mask
             if(*nm == MAX_MASKS) {
               fprintf(stderr, "Error: saw too many regions of 'N''s in the ");
               fprintf(stderr, "sequence.\n"); 
-              exit(52);
+              exit(1);
             }
             mlist[*nm].begin = mask_beg;
             mlist[*nm].end = len-1;
@@ -98,10 +103,10 @@ int read_seq_single(FILE *fp, unsigned char *seq, double *gc, int do_mask, mask
     }
     if(len+MAX_LINE >= MAX_SEQ) {
       fprintf(stderr, "Sequence too long (max %d permitted).\n", MAX_SEQ);
-      exit(53);
+      exit(1);
     }
   }
-  if(fhdr > 1) {
+  if(flag == 1 && fhdr > 1) {
     for(i = 0; i < 12; i++) {
       if(i%4 == 0 || i%4 == 1) { set(seq, bctr); set(seq, bctr+1); }
       bctr+=2; len++;
@@ -109,84 +114,6 @@ int read_seq_single(FILE *fp, unsigned char *seq, double *gc, int do_mask, mask
   }
   *gc = ((double)gc_cont / (double)len);
   return len;
-}
-
-int next_seq_multi(FILE *fp, unsigned char *seq, int *sctr, double *gc, 
-                   int do_mask, mask *mlist, int *nm) {
-  char line[MAX_LINE+1];
-  int hdr = 0, fhdr = 0, bctr = 0, len = 0, wrn = 0;
-  int gc_cont = 0, mask_beg = -1;
-  unsigned int i, gapsize = 0;
-
-  line[MAX_LINE] = '\0';
-  while(fgets(line, MAX_LINE, fp) != NULL) {
-    if(hdr == 0 && line[strlen(line)-1] != '\n' && wrn == 0) {
-      wrn = 1;
-      fprintf(stderr, "Warning: saw non-sequence line longer than ");
-      fprintf(stderr, "%d chars, sequence might not be read ", MAX_LINE);
-      fprintf(stderr, "correctly.\n");
-    }
-    if(line[0] == '>' || (line[0] == 'S' && line[1] == 'Q') ||
-       (strncmp(line, "ORIGIN", 6) == 0)) {
-      hdr = 1;
-      if(fhdr > 0) break;
-      fhdr++;
-    }
-    else if(hdr == 1 && (line[0] == '/' && line[1] == '/')) hdr = 0;
-    else if(hdr == 1) {
-      if(strstr(line, "Expand") != NULL && strstr(line, "gap") != NULL) {
-        sscanf(strstr(line, "gap")+4, "%d", &gapsize); 
-        if(gapsize < 1 || gapsize > MAX_LINE) {
-          fprintf(stderr, "Error: gap size in gbk file can't exceed line");
-          fprintf(stderr, " size.\n");
-          exit(54);
-        }
-        for(i = 0; i < gapsize; i++) line[i] = 'n';
-        line[i] = '\0';
-      }
-      for(i = 0; i < strlen(line); i++) {
-        if(line[i] < 'A' || line[i] > 'z') continue;
-        if(do_mask == 1 && mask_beg != -1 && line[i] != 'N' && line[i] != 'n') {
-          if(len - mask_beg >= MASK_SIZE) {
-            if(*nm == MAX_MASKS) {
-              fprintf(stderr, "Error: saw too many regions of 'N''s in the ");
-              fprintf(stderr, "sequence.\n"); 
-              exit(55);
-            }
-            mlist[*nm].begin = mask_beg;
-            mlist[*nm].end = len-1;
-            (*nm)++;
-          }
-          mask_beg = -1;
-        }
-        if(do_mask == 1 && mask_beg == -1 && (line[i] == 'N' || line[i] == 'n'))
-          mask_beg = len;
-        if(line[i] == 'g' || line[i] == 'G') { set(seq, bctr); gc_cont++; }
-        else if(line[i] == 't' || line[i] == 'T') {
-          set(seq, bctr);
-          set(seq, bctr+1);
-        }
-        else if(line[i] == 'c' || line[i] == 'C') {
-          set(seq, bctr+1);
-          gc_cont++;
-        }
-        else if(line[i] != 'a' && line[i] != 'A') { set(seq, bctr+1); }
-        bctr+=2; len++;
-      }
-    }
-    if(len+MAX_LINE >= MAX_SEQ) {
-      fprintf(stderr, "Sequence too long (max %d permitted).\n", MAX_SEQ);
-      exit(56);
-    }
-  }
-  *gc = ((double)gc_cont / (double)len);
-  if(fseek(fp, -1*strlen(line), SEEK_CUR) == -1) {
-    fprintf(stderr, "\nError: Seek failed on sequence file.\n");
-    exit(57);
-  }
-  *sctr = *sctr + 1;
-  if(fhdr == 0) return -1;
-  else return len;
 }
 
 /* Takes rseq and fills it up with the rev complement of seq */

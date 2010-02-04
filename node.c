@@ -1,6 +1,6 @@
 /*******************************************************************************
     PRODIGAL (PROkaryotic DynamIc Programming Genefinding ALgorithm)
-    Copyright (C) 2007-2010 University of Tennessee / UT-Battelle
+    Copyright (C) 2007-2009 University of Tennessee / UT-Battelle
 
     Code Author:  Doug Hyatt
 
@@ -156,7 +156,6 @@ void record_overlapping_starts(struct _node *nod, int nn, struct _training
         if(j >= nn || nod[j].ndx > nod[i].ndx+2) continue;
         if(nod[j].ndx + MAX_SAM_OVLP < nod[i].ndx) break;
         if(nod[j].strand == 1 && nod[j].type != STOP) {
-          if(nod[j].stop_val <= nod[i].ndx) continue; 
           if(flag == 0 && nod[i].star_ptr[(nod[j].ndx)%3] == -1)
             nod[i].star_ptr[(nod[j].ndx)%3] = j;
           else if(flag == 1 && (nod[j].cscore + nod[j].sscore +
@@ -174,7 +173,6 @@ void record_overlapping_starts(struct _node *nod, int nn, struct _training
         if(j < 0 || nod[j].ndx < nod[i].ndx-2) continue;
         if(nod[j].ndx - MAX_SAM_OVLP > nod[i].ndx) break;
         if(nod[j].strand == -1 && nod[j].type != STOP) {
-          if(nod[j].stop_val >= nod[i].ndx) continue; 
           if(flag == 0 && nod[i].star_ptr[(nod[j].ndx)%3] == -1)
             nod[i].star_ptr[(nod[j].ndx)%3] = j;
           else if(flag == 1 && (nod[j].cscore + nod[j].sscore +
@@ -1214,13 +1212,14 @@ double intergenic_mod(struct _node *n1, struct _node *n2, struct _training
   Write detailed scoring information about every single possible gene.  Only
   done at the user's request.
 *******************************************************************************/
-void write_start_file(FILE *fh, struct _node *nod, int nn, struct _training
-                      *tinf, int sctr) {
+void write_start_file(char *sf, struct _node *nod, int nn, struct _training
+                      *tinf) {
   int i, prev_stop = -1, prev_strand = 0, st_type;
   double rbs1, rbs2;
   char sd_string[28][100], sd_spacer[28][20], qt[10];
   char type_string[4][5] = { "ATG", "GTG", "TTG" , "Edge" };
- 
+  FILE *fh;
+
   strcpy(sd_string[0], "None");
   strcpy(sd_spacer[0], "None");
   strcpy(sd_string[1], "GGA/GAG/AGG");
@@ -1278,8 +1277,10 @@ void write_start_file(FILE *fh, struct _node *nod, int nn, struct _training
   strcpy(sd_string[27], "AGGAGG");
   strcpy(sd_spacer[27], "5-10bp");
 
+  
+  fh = fopen(sf, "w");
+  if(fh == NULL) { fprintf(stderr, "Error writing start file.\n"); exit(1); }
   qsort(nod, nn, sizeof(struct _node), &stopcmp_nodes);
-  fprintf(fh, "# Prodigal Sequence %d\n", sctr);
   fprintf(fh, "Beg\tEnd\tStd\tTotal\tCodPot\tStrtSc\tCodon\tRBSMot\t");
   fprintf(fh, "Spacer\tRBSScr\tUpsScr\tTypeScr\n");
   for(i = 0; i < nn; i++) {
@@ -1332,6 +1333,7 @@ void write_start_file(FILE *fh, struct _node *nod, int nn, struct _training
     }
     fprintf(fh, "%.2f\t%.2f\n", nod[i].uscore, nod[i].tscore);
   }
+  fclose(fh);
   qsort(nod, nn, sizeof(struct _node), &compare_nodes);
 }
 
