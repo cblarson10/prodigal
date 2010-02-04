@@ -1,6 +1,6 @@
 /*******************************************************************************
     PRODIGAL (PROkaryotic DynamIc Programming Genefinding ALgorithm)
-    Copyright (C) 2007-2009 University of Tennessee / UT-Battelle
+    Copyright (C) 2007-2010 University of Tennessee / UT-Battelle
 
     Code Author:  Doug Hyatt
 
@@ -28,7 +28,7 @@
 
 #define MAX_NODES 2000000
 #define MIN_GENE 89
-#define MIN_EDGE_GENE 89
+#define MIN_EDGE_GENE 69
 #define MAX_SAM_OVLP 60
 #define ST_WINDOW 60
 #define OPER_DIST 60
@@ -109,7 +109,7 @@ void find_best_upstream_motif(struct _training *, unsigned char *, unsigned
 void update_motif_counts(double [4][4][4096], double *, unsigned char *,
                          unsigned char *, int, struct _node *, int);
 
-void write_start_file(char *, struct _node *, int, struct _training *);
+void write_start_file(FILE *, struct _node *, int, struct _training *, int);
 
 int cross_mask(int, int, mask *, int);
 

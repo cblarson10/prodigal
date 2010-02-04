@@ -1,6 +1,6 @@
 /*******************************************************************************
     PRODIGAL (PROkaryotic DynamIc Programming Genefinding ALgorithm)
-    Copyright (C) 2007-2009 University of Tennessee / UT-Battelle
+    Copyright (C) 2007-2010 University of Tennessee / UT-Battelle
 
     Code Author:  Doug Hyatt
 
@@ -43,7 +43,9 @@ typedef struct _mask {
   int end;
 } mask;
 
-int read_seq(FILE *, unsigned char *, double *, int, mask *, int *, int);
+int read_seq_single(FILE *, unsigned char *, double *, int, mask *, int *);
+int next_seq_multi(FILE *, unsigned char *, int *, double *, int, mask *, 
+                   int *);
 void rcom_seq(unsigned char *, unsigned char *, int);
 
 int is_a(unsigned char *, int);

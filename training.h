@@ -1,6 +1,6 @@
 /*******************************************************************************
     PRODIGAL (PROkaryotic DynamIc Programming Genefinding ALgorithm)
-    Copyright (C) 2007-2009 University of Tennessee / UT-Battelle
+    Copyright (C) 2007-2010 University of Tennessee / UT-Battelle
 
     Code Author:  Doug Hyatt
 
@@ -23,6 +23,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 struct _training {
   double gc;                    /* GC Content */
@@ -50,5 +51,36 @@ struct _training {
 
 int write_training_file(char *, struct _training *);
 int read_training_file(char *, struct _training *);
+
+void initialize_metagenome_0(struct _training *);
+void initialize_metagenome_1(struct _training *);
+void initialize_metagenome_2(struct _training *);
+void initialize_metagenome_3(struct _training *);
+void initialize_metagenome_4(struct _training *);
+void initialize_metagenome_5(struct _training *);
+void initialize_metagenome_6(struct _training *);
+void initialize_metagenome_7(struct _training *);
+void initialize_metagenome_8(struct _training *);
+void initialize_metagenome_9(struct _training *);
+void initialize_metagenome_10(struct _training *);
+void initialize_metagenome_11(struct _training *);
+void initialize_metagenome_12(struct _training *);
+void initialize_metagenome_13(struct _training *);
+void initialize_metagenome_14(struct _training *);
+void initialize_metagenome_15(struct _training *);
+void initialize_metagenome_16(struct _training *);
+void initialize_metagenome_17(struct _training *);
+void initialize_metagenome_18(struct _training *);
+void initialize_metagenome_19(struct _training *);
+void initialize_metagenome_20(struct _training *);
+void initialize_metagenome_21(struct _training *);
+void initialize_metagenome_22(struct _training *);
+void initialize_metagenome_23(struct _training *);
+void initialize_metagenome_24(struct _training *);
+void initialize_metagenome_25(struct _training *);
+void initialize_metagenome_26(struct _training *);
+void initialize_metagenome_27(struct _training *);
+void initialize_metagenome_28(struct _training *);
+void initialize_metagenome_29(struct _training *);
 
 #endif

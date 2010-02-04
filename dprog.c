@@ -1,6 +1,6 @@
 /*******************************************************************************
     PRODIGAL (PROkaryotic DynamIc Programming Genefinding ALgorithm)
-    Copyright (C) 2007-2009 University of Tennessee / UT-Battelle
+    Copyright (C) 2007-2010 University of Tennessee / UT-Battelle
 
     Code Author:  Doug Hyatt
 
@@ -32,6 +32,7 @@ int dprog(struct _node *nod, int nn, struct _training *tinf, int flag) {
   int i, j, min, max_ndx = -1, path, nxt, tmp;
   double max_sc = -1.0;
 
+  if(nn == 0) return -1;
   for(i = 0; i < nn; i++) {
     nod[i].score = 0;
     nod[i].traceb = -1;
