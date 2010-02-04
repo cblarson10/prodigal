@@ -1,0 +1,81 @@
+VERSION 1.20
+
+* Moderately improved start site prediction by adding an upstream
+scoring system for the -1/-2 positions and the -15 to -45 positions.
+* Added a routine to correct starts of rarer types (TTG in E. coli, etc.)
+that win via every other parameter (coding, RBS, and upstream score).
+* Reduced the minimum gene size for genes running off edges to 50bp.  This
+should help in identifying fragmented genes in draft or metagenomic data.
+* Added more detailed information to the starts file, including ATG/GTG/TTG
+usage, the RBS bin and spacer distance, and the new upstream composition
+score.
+* Added a '-n' option to force the program not to use the SD motif finder.  
+(This can be useful if you suspect the organism uses a motif like AAGAGG and 
+you would like to get to the AAG/etc. motifs which will be missed by the SD 
+finder.  It is also useful to get very specific RBS motifs and spacers in
+the starts file).
+* Added gene.c/h files containing a data structure for final gene models
+(exported from the dynamic programming).  Moved printing of translations and
+gene models to this data structure.
+* Added GFF output specifiable with the '-o gff' option.
+* Fixed a bug where running with a training file and without a training file
+produced different results (this elusive bug has existed since 1.0).
+* Modifed intergenic score weighting and fixed some minor bugs with this
+function.
+* Fixed some bugs that only occurred when compiled for Windows.
+* Modified draft_prodigal.pl to catch signals and generally run more robustly.
+
+Starts files are no longer in the same format as 1.0-1.10.
+Training files for 1.0-1.10 are NOT compatible with 1.20+.
+
+VERSION 1.10
+
+* Added support for multiple FASTA input via a wrapper script called
+"draft_prodigal".  Requires Perl 5.
+* Added an alternative start scoring model that automatically discovers RBS
+motifs and builds a model from upstream regions.  This model was found to
+perform slightly worse in SD genomes than the existing code, and it also takes
+twice as long, so we only use it when a genome is determined not to use the SD
+motif.
+* Fixed a bug in parsing Genbank files where the parser did not understand lines
+with "[gap 100] Extend Ns" etc. in them.
+
+Training files for 1.0-1.05 are NOT compatible with 1.10+.
+
+VERSION 1.05
+
+* Added support for exclusion of RNA regions from gene modeling via masking such
+objects in the sequence with n's and using the '-m' option to make Prodigal
+recognize them as such.
+
+VERSION 1.04
+
+* Modified Prodigal to allow genes to run off edges.  (User can disallow this
+with the -c option).
+* Allowed Prodigal to run on any size sequences if using data from a training
+file.
+
+VERSION 1.03
+
+* Fixed a bug where Prodigal didn't handle Windows C/R's in sequence input.
+* Modified the start trainer to function better in the absence (or scarcity) of
+good genes to train on.
+
+VERSION 1.02
+
+* Added protein translation support via -a flag.
+* Added full translation table support via -g flag and removed the -n option.
+* Fixed a bug that caused prodigal to hang occasionally (involving 4 consecutive
+overlapping genes in the dynamic programming model).
+
+Training files for version 1.01 are NOT compatible with version 1.02+.
+
+VERSION 1.01
+
+* Reduced the number of false positives by fixing a bug in the
+eliminate_bad_genes routine that was causing genes not to be omitted.
+* Increased the accuracy of the RBS scorer slightly by creating more bins based
+on distance and motifs and ordering then slightly differently.
+* Fixed a bug in the dynamic programming model in zero gene cases.
+
+Training files for version 1.0 are NOT compatible with version 1.01.
