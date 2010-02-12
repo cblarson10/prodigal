@@ -19,6 +19,7 @@
 *******************************************************************************/
 
 #include "sequence.h"
+#include "metagenomic.h"
 #include "node.h"
 #include "dprog.h"
 #include "gene.h"
@@ -40,7 +41,8 @@ int main(int argc, char *argv[]) {
   FILE *input_ptr, *output_ptr, *start_ptr, *trans_ptr;
   struct _node *nodes;
   struct _gene *genes;
-  struct _training tinf, *meta[30];
+  struct _training tinf;
+  struct _metagenomic_bin meta[30];
   mask mlist[MAX_MASKS];
 
   /* Allocate memory and initialize variables */
@@ -51,19 +53,20 @@ int main(int argc, char *argv[]) {
   if(seq == NULL || rseq == NULL || nodes == NULL || genes == NULL) {
     fprintf(stderr, "\nError: Malloc failed on sequence/orfs\n\n"); exit(1);
   }
-  for(i = 0; i < 30; i++) {
-    meta[i] = (struct _training *)malloc(sizeof(struct _training));
-    if(meta[i] == NULL) {
-      fprintf(stderr, "\nError: Malloc failed on training structure.\n\n"); 
-      exit(1);
-    }
-    memset(meta[i], 0, sizeof(struct _training));
-  }
   memset(seq, 0, MAX_SEQ*sizeof(unsigned char));
   memset(rseq, 0, MAX_SEQ*sizeof(unsigned char));
   memset(nodes, 0, MAX_NODES*sizeof(struct _node));
   memset(genes, 0, MAX_GENES*sizeof(struct _gene));
   memset(&tinf, 0, sizeof(struct _training));
+  for(i = 0; i < 30; i++) {
+    memset(&meta[i], 0, sizeof(struct _metagenomic_bin));
+    meta[i].tinf = (struct _training *)malloc(sizeof(struct _training));
+    if(meta[i].tinf == NULL) {
+      fprintf(stderr, "\nError: Malloc failed on training structure.\n\n"); 
+      exit(1);
+    }
+    memset(meta[i].tinf, 0, sizeof(struct _training));
+  }
   nn = 0; slen = 0; ipath = 0; ng = 0; nmask = 0;
   user_tt = 0; is_meta = 0; num_seq = 0; 
   max_phase = 0; max_score = -100.0;
@@ -166,7 +169,7 @@ int main(int argc, char *argv[]) {
 
   /* Print header */
   fprintf(stderr, "-------------------------------------\n");
-  fprintf(stderr, "PRODIGAL v2.00 [January, 2010]       \n");
+  fprintf(stderr, "PRODIGAL v2.00 [February, 2010]      \n");
   fprintf(stderr, "Univ of Tenn / Oak Ridge National Lab\n");
   fprintf(stderr, "Doug Hyatt, Loren Hauser, et al.     \n");
   fprintf(stderr, "-------------------------------------\n");
@@ -351,36 +354,7 @@ int main(int argc, char *argv[]) {
   else if(is_meta == 1) {
     fprintf(stderr, "Request:  Metagenomic, Phase:  Training\n");
     fprintf(stderr, "Initializing training files...");
-    initialize_metagenome_0(meta[0]);
-    initialize_metagenome_1(meta[1]);
-    initialize_metagenome_2(meta[2]);
-    initialize_metagenome_3(meta[3]);
-    initialize_metagenome_4(meta[4]);
-    initialize_metagenome_5(meta[5]);
-    initialize_metagenome_6(meta[6]);
-    initialize_metagenome_7(meta[7]);
-    initialize_metagenome_8(meta[8]);
-    initialize_metagenome_9(meta[9]);
-    initialize_metagenome_10(meta[10]);
-    initialize_metagenome_11(meta[11]);
-    initialize_metagenome_12(meta[12]);
-    initialize_metagenome_13(meta[13]);
-    initialize_metagenome_14(meta[14]);
-    initialize_metagenome_15(meta[15]);
-    initialize_metagenome_16(meta[16]);
-    initialize_metagenome_17(meta[17]);
-    initialize_metagenome_18(meta[18]);
-    initialize_metagenome_19(meta[19]);
-    initialize_metagenome_20(meta[20]);
-    initialize_metagenome_21(meta[21]);
-    initialize_metagenome_22(meta[22]);
-    initialize_metagenome_23(meta[23]);
-    initialize_metagenome_24(meta[24]);
-    initialize_metagenome_25(meta[25]);
-    initialize_metagenome_26(meta[26]);
-    initialize_metagenome_27(meta[27]);
-    initialize_metagenome_28(meta[28]);
-    initialize_metagenome_29(meta[29]);
+    initialize_metagenomic_bins(meta);
     fprintf(stderr, "done!\n");
     fprintf(stderr, "-------------------------------------\n");
     fflush(stderr);
@@ -432,23 +406,26 @@ int main(int argc, char *argv[]) {
 
     else { /* Metagenomic Version */
 
+      determine_top_bins(seq, rseq, slen, tinf.gc, meta);
+
       /***********************************************************************
         We do the dynamic programming thirty times on metagenomic fragments,
         once for each of the 30 model organisms in our training set.
       ***********************************************************************/
-      for(i = 0; i < 30; i++) {
+      for(i = 0; i < NUM_BIN; i++) {
         memset(nodes, 0, MAX_NODES*sizeof(struct _node));
-        nn = add_nodes(seq, rseq, slen, nodes, closed, mlist, nmask, meta[i]);
+        nn = add_nodes(seq, rseq, slen, nodes, closed, mlist, nmask, 
+                       meta[i].tinf);
         qsort(nodes, nn, sizeof(struct _node), &compare_nodes);
-        score_nodes(seq, rseq, slen, nodes, nn, meta[i]);
-        record_overlapping_starts(nodes, nn, meta[i], 1);
-        ipath = dprog(nodes, nn, meta[i], 1);
+        score_nodes(seq, rseq, slen, nodes, nn, meta[i].tinf);
+        record_overlapping_starts(nodes, nn, meta[i].tinf, 1);
+        ipath = dprog(nodes, nn, meta[i].tinf, 1);
         if(i == 0 || nodes[ipath].score > max_score) {
           max_phase = i;
           max_score = nodes[ipath].score;
-          eliminate_bad_genes(nodes, ipath, meta[i]);
+          eliminate_bad_genes(nodes, ipath, meta[i].tinf);
           ng = add_genes(genes, nodes, ipath);
-          tweak_final_starts(genes, ng, nodes, nn, meta[i]);
+          tweak_final_starts(genes, ng, nodes, nn, meta[i].tinf);
         }
       }    
 
@@ -457,7 +434,7 @@ printf("max score %.2f\n", max_score);
       /* Recover the nodes for the best of the 30 sets */
       memset(nodes, 0, MAX_NODES*sizeof(struct _node));
       nn = add_nodes(seq, rseq, slen, nodes, closed, mlist, nmask,
-                     meta[max_phase]);
+                     meta[max_phase].tinf);
       qsort(nodes, nn, sizeof(struct _node), &compare_nodes);
     }
 
@@ -470,7 +447,7 @@ fflush(stdout);
                            num_seq);
       else
         write_translations(trans_ptr, genes, ng, nodes, seq, rseq, slen,
-                           meta[max_phase], num_seq);
+                           meta[max_phase].tinf, num_seq);
     }
 
     /* Reset all the sequence/dynamic programming variables */
@@ -485,7 +462,7 @@ fflush(stdout);
   if(rseq != NULL) free(rseq);
   if(nodes != NULL) free(nodes);
   if(genes != NULL) free(genes);
-  for(i = 0; i < 30; i++) if(meta[i] != NULL) free(meta[i]);
+  for(i = 0; i < 30; i++) if(meta[i].tinf != NULL) free(meta[i].tinf);
 
   /* Close all the filehandles and exit */
   if(input_ptr != stdin) fclose(input_ptr);
@@ -496,7 +473,7 @@ fflush(stdout);
 }
 
 void version() {
-  fprintf(stderr, "\nProdigal V2.00: January, 2010\n\n");
+  fprintf(stderr, "\nProdigal V2.00: February, 2010\n\n");
   exit(0);
 }
 

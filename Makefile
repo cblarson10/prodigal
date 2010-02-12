@@ -18,46 +18,31 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
 
+SHELL=	/bin/sh
 CC=	gcc
 
 SRC=	main.c \
 	gene.c \
 	dprog.c \
 	node.c \
+	metagenomic.c \
 	sequence.c \
 	training.c \
 	bitmap.c
 
-PROC=	prodigal
+EXEC=	prodigal
 
 CFLAGS=	-O3 -Wall
 
 LIBS=	-lm
 LDFLAGS=	$(LDIRS) $(LIBS)
 
-
 OBJS=	${SRC:.c=.o}
 
-
-all:	$(PROC)
+all:	$(SRC) $(EXEC)
 
 clean:	$(OBJS)
-	/bin/rm -rf $(OBJS) $(PROC)
+	/bin/rm -rf $(OBJS) $(EXEC)
 
-$(PROC):	$(OBJS)
+$(EXEC):	$(OBJS)
 	$(CC) -o $@ $(OBJS) $(LDFLAGS) $(CFLAGS)
-
-bitmap.o:	bitmap.c
-	$(CC) -c $(CFLAGS) bitmap.c
-dprog.o:	dprog.c
-	$(CC) -c $(CFLAGS) dprog.c
-gene.o:	gene.c
-	$(CC) -c $(CFLAGS) gene.c
-main.o:	main.c
-	$(CC) -c $(CFLAGS) main.c
-node.o:	node.c
-	$(CC) -c $(CFLAGS) node.c
-sequence.o:	sequence.c
-	$(CC) -c $(CFLAGS) sequence.c
-training.o:	training.c
-	$(CC) -c $(CFLAGS) training.c
