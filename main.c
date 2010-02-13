@@ -379,7 +379,7 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "Finding genes in sequence #%d (%d bp)...", num_seq, slen);
     fflush(stderr);
 
-    if(is_meta == 0) {
+    if(is_meta == 0) { /* Single Genome Version */
 
       /***********************************************************************
         Find all the potential starts and stops, sort them, and create a 
@@ -409,8 +409,8 @@ int main(int argc, char *argv[]) {
       determine_top_bins(seq, rseq, slen, tinf.gc, meta);
 
       /***********************************************************************
-        We do the dynamic programming thirty times on metagenomic fragments,
-        once for each of the 30 model organisms in our training set.
+        We do the dynamic programming multiple times on metagenomic fragments,
+        once for each of the top model organisms in our training set.
       ***********************************************************************/
       for(i = 0; i < NUM_BIN; i++) {
         memset(nodes, 0, MAX_NODES*sizeof(struct _node));
@@ -430,17 +430,21 @@ int main(int argc, char *argv[]) {
       }    
 
       fprintf(stderr, "done!\n"); fflush(stderr);
-printf("max score %.2f\n", max_score);
-      /* Recover the nodes for the best of the 30 sets */
+
+      /* Recover the nodes for the best of the runs */
       memset(nodes, 0, MAX_NODES*sizeof(struct _node));
       nn = add_nodes(seq, rseq, slen, nodes, closed, mlist, nmask,
                      meta[max_phase].tinf);
       qsort(nodes, nn, sizeof(struct _node), &compare_nodes);
+      score_nodes(seq, rseq, slen, nodes, nn, meta[max_phase].tinf);
+      if(start_ptr != stdout) 
+        write_start_file(start_ptr, nodes, nn, meta[max_phase].tinf, 
+                         num_seq);
     }
 
     /* Output the genes */
     print_genes(output_ptr, genes, ng, nodes, slen, output, num_seq);
-fflush(stdout);
+    fflush(stdout);
     if(trans_ptr != stdout) {
       if(is_meta == 0)
         write_translations(trans_ptr, genes, ng, nodes, seq, rseq, slen, &tinf, 

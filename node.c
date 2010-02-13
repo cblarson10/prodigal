@@ -310,7 +310,7 @@ void calc_dicodon_gene(struct _training *tinf, unsigned char *seq, unsigned
 
 void score_nodes(unsigned char *seq, unsigned char *rseq, int slen,
                  struct _node *nod, int nn, struct _training *tinf) {
-  int i;
+  int i, j;
   double negf, posf, rbs1, rbs2, sd_score;
 
   /* Step 1: Calculate raw coding potential for every start-stop pair. */
@@ -333,6 +333,19 @@ void score_nodes(unsigned char *seq, unsigned char *rseq, int slen,
     if(nod[i].strand == 1) score_upstream_composition(seq, slen, &nod[i], tinf);
     else score_upstream_composition(rseq, slen, &nod[i], tinf);
 
+    /******************************************************************
+    ** Penalize upstream score if choosing this start would stop the **
+    ** gene from running off the edge.                               **
+    ******************************************************************/
+    if(i < 500 && nod[i].strand == 1)
+      for(j = i; j >= 0; j--)
+        if(nod[j].edge == 1 && nod[i].stop_val == nod[j].stop_val) 
+          nod[i].uscore -= 1.733*tinf->st_wt;
+    if(i >= nn-500 && nod[i].strand == -1)
+      for(j = i; j < nn; j++)
+        if(nod[j].edge == 1 && nod[i].stop_val == nod[j].stop_val) 
+          nod[i].uscore -= 1.733*tinf->st_wt;
+ 
     /* Type Score */
     nod[i].tscore = tinf->type_wt[nod[i].type] * tinf->st_wt;
 
@@ -363,11 +376,8 @@ void score_nodes(unsigned char *seq, unsigned char *rseq, int slen,
     nod[i].sscore = nod[i].tscore + nod[i].rscore + nod[i].uscore;
     if(nod[i].cscore < 0) nod[i].sscore -= 0.5;
     
-    if(nod[i].edge == 0 && abs(nod[i].ndx-nod[i].stop_val) <= MIN_GENE && 
+    if(abs(nod[i].ndx-nod[i].stop_val) <= MIN_GENE && 
        nod[i].cscore+nod[i].sscore < 15.0)
-       nod[i].sscore -= 100.0;
-    if(nod[i].edge == 1 && abs(nod[i].ndx-nod[i].stop_val) <= MIN_EDGE_GENE && 
-       nod[i].cscore+nod[i].sscore < 10.0)
        nod[i].sscore -= 100.0;
   }
 }
@@ -1367,6 +1377,8 @@ int compare_nodes(const void *v1, const void *v2) {
   n2 = (struct _node *)v2;
   if(n1->ndx < n2->ndx) return -1;
   if(n1->ndx > n2->ndx) return 1;
+  if(n1->strand > n2->strand) return -1;
+  if(n1->strand < n2->strand) return 1;
   return 0;
 }
 
