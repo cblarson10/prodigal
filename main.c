@@ -23,7 +23,7 @@
 #include "node.h"
 #include "dprog.h"
 #include "gene.h"
-
+  #include <sys/time.h>
 #define MIN_SINGLE_GENOME 1000
 
 void version();
@@ -344,9 +344,9 @@ int main(int argc, char *argv[]) {
     }
 
     /* Reset all the sequence/dynamic programming variables */
-    memset(seq, 0, MAX_SEQ*sizeof(unsigned char));
-    memset(rseq, 0, MAX_SEQ*sizeof(unsigned char));
-    memset(nodes, 0, MAX_NODES*sizeof(struct _node));
+    memset(seq, 0, slen*sizeof(unsigned char));
+    memset(rseq, 0, slen*sizeof(unsigned char));
+    memset(nodes, 0, nn*sizeof(struct _node));
     nn = 0; slen = 0; ipath = 0; nmask = 0;
   }
 
@@ -413,10 +413,14 @@ int main(int argc, char *argv[]) {
         once for each of the top model organisms in our training set.
       ***********************************************************************/
       for(i = 0; i < NUM_BIN; i++) {
-        memset(nodes, 0, MAX_NODES*sizeof(struct _node));
-        nn = add_nodes(seq, rseq, slen, nodes, closed, mlist, nmask, 
-                       meta[i].tinf);
-        qsort(nodes, nn, sizeof(struct _node), &compare_nodes);
+        if(i == 0 || meta[i].tinf->trans_table != 
+           meta[i-1].tinf->trans_table) {
+          memset(nodes, 0, nn*sizeof(struct _node));
+          nn = add_nodes(seq, rseq, slen, nodes, closed, mlist, nmask, 
+                         meta[i].tinf);
+          qsort(nodes, nn, sizeof(struct _node), &compare_nodes);
+        }
+        zero_nodes(nodes, nn);
         score_nodes(seq, rseq, slen, nodes, nn, meta[i].tinf);
         record_overlapping_starts(nodes, nn, meta[i].tinf, 1);
         ipath = dprog(nodes, nn, meta[i].tinf, 1);
@@ -432,14 +436,17 @@ int main(int argc, char *argv[]) {
       fprintf(stderr, "done!\n"); fflush(stderr);
 
       /* Recover the nodes for the best of the runs */
-      memset(nodes, 0, MAX_NODES*sizeof(struct _node));
-      nn = add_nodes(seq, rseq, slen, nodes, closed, mlist, nmask,
-                     meta[max_phase].tinf);
-      qsort(nodes, nn, sizeof(struct _node), &compare_nodes);
-      score_nodes(seq, rseq, slen, nodes, nn, meta[max_phase].tinf);
-      if(start_ptr != stdout) 
-        write_start_file(start_ptr, nodes, nn, meta[max_phase].tinf, 
-                         num_seq);
+      if(start_ptr != stdout || meta[max_phase].tinf->trans_table !=
+         meta[i-1].tinf->trans_table) {
+        memset(nodes, 0, nn*sizeof(struct _node));
+        nn = add_nodes(seq, rseq, slen, nodes, closed, mlist, nmask,
+                       meta[max_phase].tinf);
+        qsort(nodes, nn, sizeof(struct _node), &compare_nodes);
+        score_nodes(seq, rseq, slen, nodes, nn, meta[max_phase].tinf);
+        if(start_ptr != stdout) 
+          write_start_file(start_ptr, nodes, nn, meta[max_phase].tinf, 
+                           num_seq);
+      }
     }
 
     /* Output the genes */
@@ -455,9 +462,9 @@ int main(int argc, char *argv[]) {
     }
 
     /* Reset all the sequence/dynamic programming variables */
-    memset(seq, 0, MAX_SEQ*sizeof(unsigned char));
-    memset(rseq, 0, MAX_SEQ*sizeof(unsigned char));
-    memset(nodes, 0, MAX_NODES*sizeof(struct _node));
+    memset(seq, 0, slen*sizeof(unsigned char));
+    memset(rseq, 0, slen*sizeof(unsigned char));
+    memset(nodes, 0, nn*sizeof(struct _node));
     nn = 0; slen = 0; ipath = 0; nmask = 0;
   }
 

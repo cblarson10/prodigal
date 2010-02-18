@@ -133,6 +133,31 @@ int add_nodes(unsigned char *seq, unsigned char *rseq, int slen, struct _node
   return nn;
 }
 
+/* Simple routine to zero out the node scores */
+
+void zero_nodes(struct _node *nod, int nn) {
+  int i, j;
+  for(i = 0; i < nn; i++) {
+    for(j = 0; j < 3; j++) {
+      nod[i].star_ptr[j] = 0;
+      nod[i].gc_score[j] = 0.0;
+    }
+    for(j = 0; j < 2; j++) nod[i].rbs[j] = 0;
+    nod[i].score = 0.0;
+    nod[i].cscore = 0.0; 
+    nod[i].sscore = 0.0; 
+    nod[i].rscore = 0.0; 
+    nod[i].tscore = 0.0; 
+    nod[i].uscore = 0.0; 
+    nod[i].traceb = -1;
+    nod[i].tracef = -1;
+    nod[i].ov_mark = -1;
+    nod[i].elim = 0;
+    nod[i].gc_bias = 0;
+    memset(&nod[i].mot, 0, sizeof(struct _motif));
+  }
+}
+
 /*******************************************************************************
   Since dynamic programming can't go 'backwards', we have to record
   information about overlapping genes in order to build the models.  So, for
@@ -327,37 +352,49 @@ void score_nodes(unsigned char *seq, unsigned char *rseq, int slen,
 
   /* Step 3: Score the start nodes */
   for(i = 0; i < nn; i++) {
-    if(nod[i].type == STOP || nod[i].edge == 1) continue;
+    if(nod[i].type == STOP) continue;
 
-    /* Upstream Score */
-    if(nod[i].strand == 1) score_upstream_composition(seq, slen, &nod[i], tinf);
-    else score_upstream_composition(rseq, slen, &nod[i], tinf);
+    /* Edge Starts */
+    if(nod[i].edge == 1) {
+      nod[i].tscore = 0.0;
+      nod[i].uscore = EDGE_BONUS;
+      nod[i].rscore = 0.0;
+    }
 
-    /******************************************************************
-    ** Penalize upstream score if choosing this start would stop the **
-    ** gene from running off the edge.                               **
-    ******************************************************************/
-    if(i < 500 && nod[i].strand == 1)
-      for(j = i; j >= 0; j--)
-        if(nod[j].edge == 1 && nod[i].stop_val == nod[j].stop_val) 
-          nod[i].uscore -= 1.733*tinf->st_wt;
-    if(i >= nn-500 && nod[i].strand == -1)
-      for(j = i; j < nn; j++)
-        if(nod[j].edge == 1 && nod[i].stop_val == nod[j].stop_val) 
-          nod[i].uscore -= 1.733*tinf->st_wt;
- 
-    /* Type Score */
-    nod[i].tscore = tinf->type_wt[nod[i].type] * tinf->st_wt;
-
-    /* RBS Motif Score */
-    rbs1 = tinf->rbs_wt[nod[i].rbs[0]];
-    rbs2 = tinf->rbs_wt[nod[i].rbs[1]];
-    sd_score = dmax(rbs1, rbs2) * tinf->st_wt;
-    if(tinf->uses_sd == 1) nod[i].rscore = sd_score;
     else {
-      nod[i].rscore = tinf->st_wt*nod[i].mot.score;
-      if(nod[i].rscore < sd_score && tinf->no_mot > -0.5)
-        nod[i].rscore = sd_score;
+
+      /* Upstream Score */
+      if(nod[i].strand == 1) 
+        score_upstream_composition(seq, slen, &nod[i], tinf);
+      else score_upstream_composition(rseq, slen, &nod[i], tinf);
+
+      /****************************************************************
+      ** Penalize upstream score if choosing this start would stop   **
+      ** the gene from running off the edge.                         **
+      ****************************************************************/
+      if(i < 500 && nod[i].strand == 1)
+        for(j = i; j >= 0; j--)
+          if(nod[j].edge == 1 && nod[i].stop_val == nod[j].stop_val) 
+            nod[i].uscore += EDGE_UPS*tinf->st_wt;
+      if(i >= nn-500 && nod[i].strand == -1)
+        for(j = i; j < nn; j++)
+          if(nod[j].edge == 1 && nod[i].stop_val == nod[j].stop_val) 
+            nod[i].uscore += EDGE_UPS*tinf->st_wt;
+ 
+      /* Type Score */
+      nod[i].tscore = tinf->type_wt[nod[i].type] * tinf->st_wt;
+
+      /* RBS Motif Score */
+      rbs1 = tinf->rbs_wt[nod[i].rbs[0]];
+      rbs2 = tinf->rbs_wt[nod[i].rbs[1]];
+      sd_score = dmax(rbs1, rbs2) * tinf->st_wt;
+      if(tinf->uses_sd == 1) nod[i].rscore = sd_score;
+      else {
+        nod[i].rscore = tinf->st_wt*nod[i].mot.score;
+        if(nod[i].rscore < sd_score && tinf->no_mot > -0.5)
+          nod[i].rscore = sd_score;
+      }
+
     }
 
     /* Penalize short genes */

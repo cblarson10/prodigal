@@ -32,6 +32,8 @@
 #define MAX_SAM_OVLP 60
 #define ST_WINDOW 60
 #define OPER_DIST 60
+#define EDGE_BONUS 0.53
+#define EDGE_UPS -1.20
 
 struct _motif {
   int ndx;             /* Index of the best motif for this node */
@@ -70,7 +72,7 @@ struct _node {
 
 int add_nodes(unsigned char *, unsigned char *, int, struct _node *, int,
               mask *, int, struct _training *);
-
+void zero_nodes(struct _node *, int);
 int compare_nodes(const void *, const void *);
 int stopcmp_nodes(const void *, const void *);
 

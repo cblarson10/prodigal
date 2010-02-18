@@ -88,7 +88,7 @@ double score_sample(unsigned char *seq, unsigned char *rseq, int slen, int
 void determine_top_bins(unsigned char *seq, unsigned char *rseq, int slen,
                         double gc, struct _metagenomic_bin *meta) {
   int i, j;
-  double nfrag = 0.0, rnd = 0.0;
+  double nsamp = 0.0, rnd = 0.0;
 
   srand(time(NULL));
 
@@ -103,15 +103,14 @@ void determine_top_bins(unsigned char *seq, unsigned char *rseq, int slen,
                             meta[i].tinf)); 
   }
   else {
-    nfrag = ((double)(SAMPLE_LEN*MAX_SAMPLE))/slen;
-    for(i = 0; (i+1)*SAMPLE_LEN <= slen; i++) {
-      rnd = ((double)rand())/((double)RAND_MAX);
-      if(rnd < nfrag) {
-        for(j = 0; j < 30; j++) {
-          meta[j].weight += dmax(0.0, score_sample(seq, rseq, slen, 
-                                 i*SAMPLE_LEN, (i+1)*SAMPLE_LEN-1, 
-                                 meta[j].tinf));
-        }
+    nsamp = ((double)slen*5.0/SAMPLE_LEN);
+    if(nsamp > MAX_SAMPLE) nsamp = MAX_SAMPLE;
+    for(i = 0; i < nsamp; i++) {
+      rnd = (int)(((double)rand())/((double)RAND_MAX) * (slen-SAMPLE_LEN-1));
+      if(rnd < 0 || rnd > slen-SAMPLE_LEN-1) { printf("UHOH!!!\n"); } 
+      for(j = 0; j < 30; j++) {
+        meta[j].weight += dmax(0.0, score_sample(seq, rseq, slen, i*SAMPLE_LEN,
+                               (i+1)*SAMPLE_LEN-1, meta[j].tinf));
       }
     }
   }
