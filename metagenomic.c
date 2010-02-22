@@ -107,7 +107,6 @@ void determine_top_bins(unsigned char *seq, unsigned char *rseq, int slen,
     if(nsamp > MAX_SAMPLE) nsamp = MAX_SAMPLE;
     for(i = 0; i < nsamp; i++) {
       rnd = (int)(((double)rand())/((double)RAND_MAX) * (slen-SAMPLE_LEN-1));
-      if(rnd < 0 || rnd > slen-SAMPLE_LEN-1) { printf("UHOH!!!\n"); } 
       for(j = 0; j < 30; j++) {
         meta[j].weight += dmax(0.0, score_sample(seq, rseq, slen, i*SAMPLE_LEN,
                                (i+1)*SAMPLE_LEN-1, meta[j].tinf));

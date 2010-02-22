@@ -27,8 +27,8 @@
 #include "training.h"
 
 #define MAX_NODES 2000000
-#define MIN_GENE 89
-#define MIN_EDGE_GENE 69
+#define MIN_GENE 90
+#define MIN_EDGE_GENE 60
 #define MAX_SAM_OVLP 60
 #define ST_WINDOW 60
 #define OPER_DIST 60
@@ -72,7 +72,7 @@ struct _node {
 
 int add_nodes(unsigned char *, unsigned char *, int, struct _node *, int,
               mask *, int, struct _training *);
-void zero_nodes(struct _node *, int);
+void reset_node_scores(struct _node *, int);
 int compare_nodes(const void *, const void *);
 int stopcmp_nodes(const void *, const void *);
 

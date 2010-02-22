@@ -28,7 +28,7 @@
 #include "training.h"
 #include "node.h"
 
-#define NUM_BIN 6
+#define NUM_BIN 8
 #define SAMPLE_LEN 120
 #define MAX_SAMPLE 200
 

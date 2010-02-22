@@ -1,3 +1,22 @@
+VERSIPN 2.00
+
+* Output Change:  A definition line is now printed before each set of CDS
+entries, and a '//' is printed after each set of CDS.
+* Argument Change:  The '-f' option now specifies output format type (formerly
+this was done by '-o').
+* New Options:  -i, -o for input/output files, -p for metagenomic/single genome
+modes, -d to write DNA sequence of genes to a file.
+* Added metagenomic genefinding routines to Prodigal, accessible via the -p
+meta option.
+* Built multiple FASTA handling into the base program (draft_prodigal.pl
+script is no longer needed).
+* Changed existing rules and added new ones specifically to handle large
+numbers of small contigs (and genes that run off the edges of them).
+* Fixed bugs in the add_nodes function and cleaned it up.
+
+Output is no longer in the same format as 1.0-1.20.
+Some command line options have changed from 1.0-1.20.
+
 VERSION 1.20
 
 * Moderately improved start site prediction by adding an upstream

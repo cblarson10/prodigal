@@ -169,7 +169,7 @@ int main(int argc, char *argv[]) {
 
   /* Print header */
   fprintf(stderr, "-------------------------------------\n");
-  fprintf(stderr, "PRODIGAL v2.00 [February, 2010]      \n");
+  fprintf(stderr, "PRODIGAL v2.00 [March, 2010]         \n");
   fprintf(stderr, "Univ of Tenn / Oak Ridge National Lab\n");
   fprintf(stderr, "Doug Hyatt, Loren Hauser, et al.     \n");
   fprintf(stderr, "-------------------------------------\n");
@@ -420,7 +420,7 @@ int main(int argc, char *argv[]) {
                          meta[i].tinf);
           qsort(nodes, nn, sizeof(struct _node), &compare_nodes);
         }
-        zero_nodes(nodes, nn);
+        reset_node_scores(nodes, nn);
         score_nodes(seq, rseq, slen, nodes, nn, meta[i].tinf);
         record_overlapping_starts(nodes, nn, meta[i].tinf, 1);
         ipath = dprog(nodes, nn, meta[i].tinf, 1);
@@ -484,7 +484,7 @@ int main(int argc, char *argv[]) {
 }
 
 void version() {
-  fprintf(stderr, "\nProdigal V2.00: February, 2010\n\n");
+  fprintf(stderr, "\nProdigal V2.00: March, 2010\n\n");
   exit(0);
 }
 
