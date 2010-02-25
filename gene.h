@@ -42,4 +42,7 @@ void print_genes(FILE *, struct _gene *, int, struct _node *, int, int, int);
 void write_translations(FILE *, struct _gene *, int, struct _node *, 
                         unsigned char *, unsigned char *, int, 
                         struct _training *, int);
+void write_nucleotide_seqs(FILE *, struct _gene *, int, struct _node *, 
+                           unsigned char *, unsigned char *, unsigned char *,
+                           int, struct _training *, int);
 #endif

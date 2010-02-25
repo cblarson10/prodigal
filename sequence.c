@@ -28,8 +28,8 @@
   parser, but, to be safe, FASTA should generally be preferred.
 *******************************************************************************/
 
-int read_seq_single(FILE *fp, unsigned char *seq, double *gc, int do_mask, mask
-              *mlist, int *nm) {
+int read_seq_single(FILE *fp, unsigned char *seq, unsigned char *useq, 
+                    double *gc, int do_mask, mask *mlist, int *nm) {
   char line[MAX_LINE+1];
   int hdr = 0, fhdr = 0, bctr = 0, len = 0, wrn = 0;
   int gc_cont = 0, mask_beg = -1;
@@ -92,7 +92,10 @@ int read_seq_single(FILE *fp, unsigned char *seq, double *gc, int do_mask, mask
           set(seq, bctr+1);
           gc_cont++;
         }
-        else if(line[i] != 'a' && line[i] != 'A') { set(seq, bctr+1); }
+        else if(line[i] != 'a' && line[i] != 'A') { 
+          set(seq, bctr+1); 
+          set(useq, len);
+        }
         bctr+=2; len++;
       }
     }
@@ -111,8 +114,8 @@ int read_seq_single(FILE *fp, unsigned char *seq, double *gc, int do_mask, mask
   return len;
 }
 
-int next_seq_multi(FILE *fp, unsigned char *seq, int *sctr, double *gc, 
-                   int do_mask, mask *mlist, int *nm) {
+int next_seq_multi(FILE *fp, unsigned char *seq, unsigned char *useq,
+                   int *sctr, double *gc, int do_mask, mask *mlist, int *nm) {
   char line[MAX_LINE+1];
   int hdr = 0, fhdr = 0, bctr = 0, len = 0, wrn = 0;
   int gc_cont = 0, mask_beg = -1;
@@ -170,7 +173,10 @@ int next_seq_multi(FILE *fp, unsigned char *seq, int *sctr, double *gc,
           set(seq, bctr+1);
           gc_cont++;
         }
-        else if(line[i] != 'a' && line[i] != 'A') { set(seq, bctr+1); }
+        else if(line[i] != 'a' && line[i] != 'A') { 
+          set(seq, bctr+1); 
+          set(useq, len);
+        }
         bctr+=2; len++;
       }
     }
@@ -182,6 +188,8 @@ int next_seq_multi(FILE *fp, unsigned char *seq, int *sctr, double *gc,
   *gc = ((double)gc_cont / (double)len);
   if(fseek(fp, -1*strlen(line), SEEK_CUR) == -1) {
     fprintf(stderr, "\nError: Seek failed on sequence file.\n");
+    fprintf(stderr, "\n(Note that Prodigal does not work with piped input");
+    fprintf(stderr, ", since it fseeks\nback and forth in the file).\n");
     exit(57);
   }
   *sctr = *sctr + 1;
@@ -191,10 +199,17 @@ int next_seq_multi(FILE *fp, unsigned char *seq, int *sctr, double *gc,
 
 /* Takes rseq and fills it up with the rev complement of seq */
 
-void rcom_seq(unsigned char *seq, unsigned char *rseq, int len) {
-  int i, slen = len*2;
+void rcom_seq(unsigned char *seq, unsigned char *rseq, unsigned char *useq, 
+              int len) {
+  int i, slen=len*2;
   for(i = 0; i < slen; i++)
     if(test(seq, i) == 0) set(rseq, slen-i-1+(i%2==0?-1:1));
+  for(i = 0; i < len; i++) {
+    if(test(useq, i) == 1) {
+      toggle(rseq, slen-1-i*2); 
+      toggle(rseq, slen-2-i*2);
+    }
+  }
 }
 
 /* Simple routines to say whether or not bases are */
@@ -221,6 +236,11 @@ int is_g(unsigned char *seq, int n) {
 int is_t(unsigned char *seq, int n) {
   int ndx = n*2;
   if(test(seq, ndx) == 0 || test(seq, ndx+1) == 0) return 0;
+  return 1;
+}
+
+int is_n(unsigned char *useq, int n) {
+  if(test(useq, n) == 0) return 0;
   return 1;
 }
 

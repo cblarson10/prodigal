@@ -43,15 +43,17 @@ typedef struct _mask {
   int end;
 } mask;
 
-int read_seq_single(FILE *, unsigned char *, double *, int, mask *, int *);
-int next_seq_multi(FILE *, unsigned char *, int *, double *, int, mask *, 
-                   int *);
-void rcom_seq(unsigned char *, unsigned char *, int);
+int read_seq_single(FILE *, unsigned char *, unsigned char *, double *, int,
+                    mask *, int *);
+int next_seq_multi(FILE *, unsigned char *, unsigned char *, int *, double *,
+                   int, mask *, int *);
+void rcom_seq(unsigned char *, unsigned char *, unsigned char *, int);
 
 int is_a(unsigned char *, int);
 int is_c(unsigned char *, int);
 int is_g(unsigned char *, int);
 int is_t(unsigned char *, int);
+int is_n(unsigned char *, int);
 int is_gc(unsigned char *, int);
 
 int is_stop(unsigned char *, int, struct _training *);

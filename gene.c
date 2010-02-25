@@ -278,3 +278,42 @@ void write_translations(FILE *fh, struct _gene *genes, int ng, struct
     }
   }
 }
+
+/* Print the gene nucleotide sequences */
+void write_nucleotide_seqs(FILE *fh, struct _gene *genes, int ng, struct 
+                           _node *nod, unsigned char *seq, unsigned char *rseq,
+                           unsigned char *useq, int slen, struct _training 
+                           *tinf, int sctr) {
+  int i, j;
+
+  fprintf(fh, "# Prodigal Sequence %d\n", sctr);
+  for(i = 0; i < ng; i++) {
+    if(nod[genes[i].start_ndx].strand == 1) {
+      fprintf(fh, ">Prodigal Gene %d # %d # %d # 1\n", i+1, genes[i].begin,
+              genes[i].end);
+      for(j = genes[i].begin-1; j < genes[i].end; j++) {
+        if(is_a(seq, j) == 1) fprintf(fh, "A");
+        else if(is_t(seq, j) == 1) fprintf(fh, "T");
+        else if(is_g(seq, j) == 1) fprintf(fh, "G");
+        else if(is_c(seq, j) == 1 && is_n(useq, j) == 0) fprintf(fh, "C");
+        else fprintf(fh, "N");
+        if((j-genes[i].begin+1)%70 == 69) fprintf(fh, "\n");
+      }
+      if((j-genes[i].begin+1)%70 != 0) fprintf(fh, "\n");
+    }
+    else {
+      fprintf(fh, ">Prodigal Gene %d # %d # %d # -1\n", i+1, genes[i].begin,
+              genes[i].end);
+      for(j = slen-genes[i].end; j < slen+1-genes[i].begin; j++) {
+        if(is_a(rseq, j) == 1) fprintf(fh, "A");
+        else if(is_t(rseq, j) == 1) fprintf(fh, "T");
+        else if(is_g(rseq, j) == 1) fprintf(fh, "G");
+        else if(is_c(rseq, j) == 1 && is_n(useq, slen-1-j) == 0) 
+          fprintf(fh, "C");
+        else fprintf(fh, "N");
+        if((j-slen+genes[i].end)%70 == 69) fprintf(fh, "\n");
+      }
+      if((j-slen+genes[i].end)%70 != 0) fprintf(fh, "\n");
+    }
+  }
+}

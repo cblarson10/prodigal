@@ -265,6 +265,7 @@ void record_gc_bias(int *gc, struct _node *nod, int nn, struct _training
   int i, j, ctr[3][3], last[3], frmod, fr, mfr, len;
   double tot = 0.0;
 
+  if(nn == 0) return;
   for(i = 0; i < 3; i++) for(j = 0; j < 3; j++) ctr[i][j] = 0;
   for(i = nn-1; i >= 0; i--) {
     fr = (nod[i].ndx)%3; frmod = 3 - fr;
