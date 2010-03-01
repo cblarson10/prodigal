@@ -18,6 +18,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *******************************************************************************/
 
+#include <unistd.h>
 #include "sequence.h"
 #include "metagenomic.h"
 #include "node.h"
@@ -29,16 +30,19 @@
 void version();
 void usage(char *);
 void help();
+int copy_standard_input_to_file(char *);
 
 int main(int argc, char *argv[]) {
 
   int rv, slen, nn, ng, i, ipath, *gc_frame, do_training, output, max_phase;
   int closed, do_mask, nmask, force_nonsd, user_tt, is_meta, num_seq, quiet;
+  int piped;
   double max_score;
   unsigned char *seq, *rseq, *useq;
   char *train_file, *start_file, *trans_file, *nuc_file; 
-  char *input_file, *output_file;
+  char *input_file, *output_file, input_copy[MAX_LINE];
   FILE *input_ptr, *output_ptr, *start_ptr, *trans_ptr, *nuc_ptr;
+  pid_t pid;
   struct _node *nodes;
   struct _gene *genes;
   struct _training tinf;
@@ -46,16 +50,17 @@ int main(int argc, char *argv[]) {
   mask mlist[MAX_MASKS];
 
   /* Allocate memory and initialize variables */
-  seq = (unsigned char *)malloc(MAX_SEQ*sizeof(unsigned char));
-  rseq = (unsigned char *)malloc(MAX_SEQ*sizeof(unsigned char));
-  useq = (unsigned char *)malloc(MAX_SEQ*sizeof(unsigned char));
+  seq = (unsigned char *)malloc(MAX_SEQ/4*sizeof(unsigned char));
+  rseq = (unsigned char *)malloc(MAX_SEQ/4*sizeof(unsigned char));
+  useq = (unsigned char *)malloc(MAX_SEQ/8*sizeof(unsigned char));
   nodes = (struct _node *)malloc(MAX_NODES*sizeof(struct _node));
   genes = (struct _gene *)malloc(MAX_GENES*sizeof(struct _gene));
   if(seq == NULL || rseq == NULL || nodes == NULL || genes == NULL) {
     fprintf(stderr, "\nError: Malloc failed on sequence/orfs\n\n"); exit(1);
   }
-  memset(seq, 0, MAX_SEQ*sizeof(unsigned char));
-  memset(rseq, 0, MAX_SEQ*sizeof(unsigned char));
+  memset(seq, 0, MAX_SEQ/4*sizeof(unsigned char));
+  memset(rseq, 0, MAX_SEQ/4*sizeof(unsigned char));
+  memset(useq, 0, MAX_SEQ/8*sizeof(unsigned char));
   memset(nodes, 0, MAX_NODES*sizeof(struct _node));
   memset(genes, 0, MAX_GENES*sizeof(struct _gene));
   memset(&tinf, 0, sizeof(struct _training));
@@ -74,9 +79,13 @@ int main(int argc, char *argv[]) {
   train_file = NULL; do_training = 0;
   start_file = NULL; trans_file = NULL; nuc_file = NULL;
   start_ptr = stdout; trans_ptr = stdout; nuc_ptr = stdout;
-  input_file = NULL; output_file = NULL;
+  input_file = NULL; output_file = NULL; piped = 0;
   input_ptr = stdin; output_ptr = stdout;
   output = 0; closed = 0; do_mask = 0; force_nonsd = 0;
+
+  /* Filename for input copy if needed */
+  pid = getpid();
+  sprintf(input_copy, "tmp.prodigal.stdin.%d", pid);
 
   /***************************************************************************
     Set the start score weight.  Changing this number can dramatically
@@ -144,14 +153,10 @@ int main(int argc, char *argv[]) {
       i++;
     }
     else if(strcmp(argv[i], "-p") == 0 || strcmp(argv[i], "-P") == 0) {
-      if(strncmp(argv[i+1], "0", 1) == 0 || strcmp(argv[i+1], "single") == 0 ||
-         strcmp(argv[i+1], "SINGLE") == 0) {
-        is_meta = 0;
-      }
-      else if(strncmp(argv[i+1], "0", 1) == 0 || strcmp(argv[i+1], "meta") == 0 ||
-         strcmp(argv[i+1], "META") == 0) {
-        is_meta = 1;
-      }
+      if(argv[i+1][0] == '0' || argv[i+1][0] == 's' || argv[i+1][0] ==
+              'S') is_meta = 0;
+      else if(argv[i+1][0] == '1' || argv[i+1][0] == 'm' || argv[i+1][0] ==
+              'M') is_meta = 1; 
       else usage("Invalid meta/single genome type specified.");
       i++;
     }
@@ -216,6 +221,25 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  /* If we're dealing with piped input and running in single genome */
+  /* mode with no training file, we copy standard input to a file.  */
+  if(is_meta == 0 && train_file == NULL && input_file == NULL && 
+     fseek(input_ptr, 0, SEEK_SET) == -1) {
+    piped = 1;
+    if(quiet == 0) 
+      fprintf(stderr, "Piped input detected, copying stdin to a tmp file...");
+    if(copy_standard_input_to_file(input_copy) == -1) {
+      fprintf(stderr, "\nError: can't copy stdin to file.\n\n");
+      exit(17);
+    }
+    input_file = input_copy;
+    if(quiet == 0) {
+      fprintf(stderr, "done!\n");
+      fprintf(stderr, "-------------------------------------\n");
+      fflush(stderr);
+    }
+  }
+
   /* Check i/o files (if specified) and prepare them for reading/writing */
   if(input_file != NULL) {
     input_ptr = fopen(input_file, "r");
@@ -251,7 +275,7 @@ int main(int argc, char *argv[]) {
     if(nuc_ptr == NULL) {
       fprintf(stderr, "\nError: can't open gene nucleotide file %s.\n\n", 
               nuc_file);
-      exit(8);
+      exit(16);
     }
   }
 
@@ -266,8 +290,8 @@ int main(int argc, char *argv[]) {
       fprintf(stderr, "Reading in the sequence(s) to train..."); 
       fflush(stderr);
     }
-    slen = read_seq_single(input_ptr, seq, useq, &(tinf.gc), do_mask, mlist, 
-                           &nmask);
+    slen = read_seq_training(input_ptr, seq, useq, &(tinf.gc), do_mask, mlist,
+                             &nmask);
     if(slen == 0) {
       fprintf(stderr, "\n\nSequence read failed (file must be Fasta, ");
       fprintf(stderr, "Genbank, or EMBL format).\n\n");
@@ -392,14 +416,18 @@ int main(int argc, char *argv[]) {
     if(quiet == 0) fprintf(stderr, "-------------------------------------\n");
     if(fseek(input_ptr, 0, SEEK_SET) == -1) {
       fprintf(stderr, "\nError: could not rewind input file.\n"); 
-      fprintf(stderr, "\n(Note that Prodigal does not work with piped input");
-      fprintf(stderr, ", since it fseeks\nback and forth in the file).\n"); 
+      fprintf(stderr, "\n(Note that Prodigal's single genome mode does not");
+      fprintf(stderr, " work with piped\ninput, since it fseeks to rewind");
+      fprintf(stderr, " the input file.  If you need to\npipe input to ");
+      fprintf(stderr, "Prodigal, you can run in two steps with the -t ");
+      fprintf(stderr, "option.)\n"); 
       exit(13);
     }
 
     /* Reset all the sequence/dynamic programming variables */
-    memset(seq, 0, slen*sizeof(unsigned char));
-    memset(rseq, 0, slen*sizeof(unsigned char));
+    memset(seq, 0, (slen/4+1)*sizeof(unsigned char));
+    memset(rseq, 0, (slen/4+1)*sizeof(unsigned char));
+    memset(useq, 0, (slen/8+1)*sizeof(unsigned char));
     memset(nodes, 0, nn*sizeof(struct _node));
     nn = 0; slen = 0; ipath = 0; nmask = 0;
   }
@@ -539,8 +567,9 @@ int main(int argc, char *argv[]) {
     }
 
     /* Reset all the sequence/dynamic programming variables */
-    memset(seq, 0, slen*sizeof(unsigned char));
-    memset(rseq, 0, slen*sizeof(unsigned char));
+    memset(seq, 0, (slen/4+1)*sizeof(unsigned char));
+    memset(rseq, 0, (slen/4+1)*sizeof(unsigned char));
+    memset(useq, 0, (slen/8+1)*sizeof(unsigned char));
     memset(nodes, 0, nn*sizeof(struct _node));
     nn = 0; slen = 0; ipath = 0; nmask = 0;
   }
@@ -558,6 +587,13 @@ int main(int argc, char *argv[]) {
   if(output_ptr != stdout) fclose(output_ptr);
   if(start_ptr != stdout) fclose(start_ptr);
   if(trans_ptr != stdout) fclose(trans_ptr);
+
+  /* Remove tmp file */
+  if(piped == 1 && remove(input_copy) != 0) {
+    fprintf(stderr, "Could not delete tmp file %s.\n", input_copy);
+    exit(18);
+  }
+
   exit(0);
 }
 
@@ -616,4 +652,16 @@ void help() {
   fprintf(stderr, "              the specified training file.\n");
   fprintf(stderr, "         -v:  Print version number and exit.\n\n");
   exit(0);
+}
+
+/* For piped input, we make a copy of stdin so we can rewind the file. */
+
+int copy_standard_input_to_file(char *path) {
+  char line[MAX_LINE+1];
+  FILE *wp;
+  wp = fopen(path, "w");
+  if(wp == NULL) return -1;
+  while(fgets(line, MAX_LINE, stdin) != NULL) fprintf(wp, "%s", line);
+  fclose(wp);
+  return 0;
 }

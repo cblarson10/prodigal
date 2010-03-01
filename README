@@ -1,6 +1,6 @@
 /*******************************************************************************
     PRODIGAL (PROkaryotic DynamIc Programming Genefinding ALgorithm)
-    Copyright (C) 2007-2009 University of Tennessee / UT-Battelle
+    Copyright (C) 2007-2010 University of Tennessee / UT-Battelle
 
     Code Author:  Doug Hyatt
 
@@ -18,7 +18,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *******************************************************************************/
 
-README for Version 1.20
+README for Version 2.00
 
 I.  Introduction
 
@@ -39,29 +39,28 @@ if you wish to use the draft_prodigal script.
 
 Do 'prodigal -h' to get a list of options, i.e.:
 
- Usage:  prodigal [-a <trans_file>] [-c] [-g <tr_table>] [-h] [-m] [-n]
-         [-o <output type>] [-s <start_file>] [-t <training_file>] [-v] <
-         <input_file> > <output_file>
+Usage:  prodigal [-a trans_file] [-c] [-d nuc_file] [-f output_type]
+                 [-g tr_table] [-h] [-i input_file] [-m] [-n] [-o output_file]
+                 [-p mode] [-q] [-s start_file] [-t training_file] [-v]
 
-         -h:  Print help menu.
          -a:  Write protein translations to the selected file.
          -c:  Closed ends.  Do not allow genes to run off edges.
-         -g:  Specify a translation table to use (default 11)
+         -d:  Write nucleotide sequence of genes to the selected file.
+         -f:  Select output format (gbk, gff, or sco).  Default is gbk.
+         -g:  Specify a translation table to use (default 11).
+         -h:  Print help menu and exit.
+         -i:  Specify input file (default reads from stdin).
          -m:  Treat runs of n's as masked sequence and do not build genes across
               them.
          -n:  Bypass the Shine-Dalgarno trainer and force the program to scan
               for motifs.
-         -o:  Select output format (gbk, gff, or sco)
+         -o:  Specify output file (default writes to stdout).
+         -p:  Select procedure (single or meta).  Default is single.
+         -q:  Run quietly (suppress normal stderr output).
          -s:  Write all potential genes (with scores) to the selected file.
          -t:  Write a training file (if none exists); otherwise, read and use
               the specified training file.
          -v:  Print version number and exit.
-
-         Single sequence :  prodigal < fasta.seq > my.genes
-
-         Training on draft: cat fasta_seqs.* | prodigal -t my.trn
-         Running on draft:  prodigal -t my.trn < fasta_seqs.1
-                            prodigal -t my.trn < fasta_seqs.2 etc.
 
 II.  Running Prodigal on Finished Genomes
 
@@ -74,12 +73,16 @@ To run Prodigal on a single finished genome sequence, simply do:
 
         prodigal < genome.seq > my.genes
 
+or
+
+        prodigal -i genome.seq -o my.genes
+
 By default, Prodigal outputs Genbank feature table format.  You can also specify
 GFF format or SCO format (Simple Coordinate).  Other formats may be supported at 
 a later date.
 
 By default, Prodigal predicts genes that run off the edges of the sequence.  If
-you wish to disallow this (usually correct for finished genomes), use the -c
+you wish to disallow this (sometimes correct for finished genomes), use the -c
 option, i.e.
 
         prodigal -c < genome.seq > my.genes
@@ -93,7 +96,9 @@ do:
 
 III.  Running Prodigal on Multiple Sequences/Draft/Plasmids/Chromosomes/etc.
 
-With version 1.10+, you may now run Prodigal in a single step on draft
+With version 2.00+, you may now run Prodigal in a single step on multiple
+FASTA files. 
+
 genomes via an included Perl script called "draft_prodigal".  To do this, you
 must put all of the sequences to be run into a single multiple FASTA format
 file.

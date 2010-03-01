@@ -28,7 +28,7 @@
 #include "bitmap.h"
 #include "training.h"
 
-#define MAX_SEQ 20000000
+#define MAX_SEQ 32000000
 #define MAX_LINE 10000
 #define WINDOW 120
 #define MASK_SIZE 50
@@ -43,8 +43,8 @@ typedef struct _mask {
   int end;
 } mask;
 
-int read_seq_single(FILE *, unsigned char *, unsigned char *, double *, int,
-                    mask *, int *);
+int read_seq_training(FILE *, unsigned char *, unsigned char *, double *, int,
+                      mask *, int *);
 int next_seq_multi(FILE *, unsigned char *, unsigned char *, int *, double *,
                    int, mask *, int *);
 void rcom_seq(unsigned char *, unsigned char *, unsigned char *, int);

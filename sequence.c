@@ -21,15 +21,16 @@
 #include "sequence.h"
 
 /*******************************************************************************
-  Read the sequence.  Flag of 0 indicates we are reading for training 
-  purposes, so multiple FASTA is handled. If flag is set to 1, we are reading
-  in the sequence to do final gene predictions, so multiple FASTA is not 
-  handled.  This routine reads in FASTA, and has a very 'loose' Genbank Embl 
-  parser, but, to be safe, FASTA should generally be preferred.
+  Read the sequence for training purposes.  If we encounter multiple
+  sequences, we insert TTAATTAATTAA between each one to force stops in all
+  six frames.  When we hit MAX_SEQ bp, we stop and return what we've got so
+  far for training.  This routine reads in FASTA, and has a very 'loose' 
+  Genbank and Embl parser, but, to be safe, FASTA should generally be 
+  preferred.
 *******************************************************************************/
 
-int read_seq_single(FILE *fp, unsigned char *seq, unsigned char *useq, 
-                    double *gc, int do_mask, mask *mlist, int *nm) {
+int read_seq_training(FILE *fp, unsigned char *seq, unsigned char *useq, 
+                      double *gc, int do_mask, mask *mlist, int *nm) {
   char line[MAX_LINE+1];
   int hdr = 0, fhdr = 0, bctr = 0, len = 0, wrn = 0;
   int gc_cont = 0, mask_beg = -1;
@@ -114,16 +115,19 @@ int read_seq_single(FILE *fp, unsigned char *seq, unsigned char *useq,
   return len;
 }
 
+/* This routine reads in the next sequence in a FASTA/GB/EMBL file */
+
 int next_seq_multi(FILE *fp, unsigned char *seq, unsigned char *useq,
                    int *sctr, double *gc, int do_mask, mask *mlist, int *nm) {
   char line[MAX_LINE+1];
-  int hdr = 0, fhdr = 0, bctr = 0, len = 0, wrn = 0;
+  int reading_seq = 0, genbank_end = 0, bctr = 0, len = 0, wrn = 0;
   int gc_cont = 0, mask_beg = -1;
   unsigned int i, gapsize = 0;
 
+  if(*sctr > 0) reading_seq = 1;
   line[MAX_LINE] = '\0';
   while(fgets(line, MAX_LINE, fp) != NULL) {
-    if(hdr == 0 && line[strlen(line)-1] != '\n' && wrn == 0) {
+    if(reading_seq == 0 && line[strlen(line)-1] != '\n' && wrn == 0) {
       wrn = 1;
       fprintf(stderr, "Warning: saw non-sequence line longer than ");
       fprintf(stderr, "%d chars, sequence might not be read ", MAX_LINE);
@@ -131,12 +135,14 @@ int next_seq_multi(FILE *fp, unsigned char *seq, unsigned char *useq,
     }
     if(line[0] == '>' || (line[0] == 'S' && line[1] == 'Q') ||
        (strncmp(line, "ORIGIN", 6) == 0)) {
-      hdr = 1;
-      if(fhdr > 0) break;
-      fhdr++;
+      if(reading_seq == 1 || genbank_end == 1 || *sctr > 0) break;
+      reading_seq = 1;
     }
-    else if(hdr == 1 && (line[0] == '/' && line[1] == '/')) hdr = 0;
-    else if(hdr == 1) {
+    else if(reading_seq == 1 && (line[0] == '/' && line[1] == '/')) {
+      reading_seq = 0;
+      genbank_end = 1;
+    }
+    else if(reading_seq == 1) {
       if(strstr(line, "Expand") != NULL && strstr(line, "gap") != NULL) {
         sscanf(strstr(line, "gap")+4, "%d", &gapsize); 
         if(gapsize < 1 || gapsize > MAX_LINE) {
@@ -185,16 +191,10 @@ int next_seq_multi(FILE *fp, unsigned char *seq, unsigned char *useq,
       exit(56);
     }
   }
+  if(len == 0) return -1;
   *gc = ((double)gc_cont / (double)len);
-  if(fseek(fp, -1*strlen(line), SEEK_CUR) == -1) {
-    fprintf(stderr, "\nError: Seek failed on sequence file.\n");
-    fprintf(stderr, "\n(Note that Prodigal does not work with piped input");
-    fprintf(stderr, ", since it fseeks\nback and forth in the file).\n");
-    exit(57);
-  }
   *sctr = *sctr + 1;
-  if(fhdr == 0) return -1;
-  else return len;
+  return len;
 }
 
 /* Takes rseq and fills it up with the rev complement of seq */
