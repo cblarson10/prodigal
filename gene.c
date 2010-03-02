@@ -194,7 +194,7 @@ void tweak_final_starts(struct _gene *genes, int ng, struct _node *nod,
 
 /* Print the genes.  'Flag' indicates which format to use. */
 void print_genes(FILE *fp, struct _gene *genes, int ng, struct _node *nod, 
-                 int slen, int flag, int sctr) {
+                 int slen, int flag, int sctr, int is_meta, char *mdesc) {
   int i;
   char left[50], right[50];
 
@@ -205,6 +205,14 @@ void print_genes(FILE *fp, struct _gene *genes, int ng, struct _node *nod,
                         sctr, slen);
   else if(flag == 1) fprintf(fp, "sequence_prodigal=%d|%d\n", sctr, slen);
   else if(flag == 2) fprintf(fp, "# Prodigal_Seq_%d (%d bp)\n", sctr, slen);
+
+  if(is_meta == 1 && flag == 0) fprintf(fp, "SOURCE               %s", mdesc);
+  else if(is_meta == 1 && flag == 1) {
+    for(i = 0; i < strlen(mdesc); i++) if(mdesc[i] == '\t') mdesc[i] = '|';
+    fprintf(fp, "classification_prodigal=%s", mdesc);
+  }
+  else if(flag == 2) fprintf(fp, "# Classification: %s", mdesc);
+  else if(flag == 3) fprintf(fp, "##classification: %s", mdesc);
 
   for(i = 0; i < ng; i++) {
     if(nod[genes[i].start_ndx].strand == 1) {

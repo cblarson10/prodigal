@@ -34,6 +34,7 @@
 
 struct _metagenomic_bin {
   int index;                    /* Index used for sorting */
+  char desc[500];               /* Text description of this bin */
   double weight;                /* Current weight/score of this bin */
   double gc;                    /* GC distance from target sequence */
   struct _training *tinf;       /* Pointer to the training file for this bin */

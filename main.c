@@ -66,6 +66,7 @@ int main(int argc, char *argv[]) {
   memset(&tinf, 0, sizeof(struct _training));
   for(i = 0; i < 30; i++) {
     memset(&meta[i], 0, sizeof(struct _metagenomic_bin));
+    strcpy(meta[i].desc, "None");
     meta[i].tinf = (struct _training *)malloc(sizeof(struct _training));
     if(meta[i].tinf == NULL) {
       fprintf(stderr, "\nError: Malloc failed on training structure.\n\n"); 
@@ -416,11 +417,6 @@ int main(int argc, char *argv[]) {
     if(quiet == 0) fprintf(stderr, "-------------------------------------\n");
     if(fseek(input_ptr, 0, SEEK_SET) == -1) {
       fprintf(stderr, "\nError: could not rewind input file.\n"); 
-      fprintf(stderr, "\n(Note that Prodigal's single genome mode does not");
-      fprintf(stderr, " work with piped\ninput, since it fseeks to rewind");
-      fprintf(stderr, " the input file.  If you need to\npipe input to ");
-      fprintf(stderr, "Prodigal, you can run in two steps with the -t ");
-      fprintf(stderr, "option.)\n"); 
       exit(13);
     }
 
@@ -496,6 +492,15 @@ int main(int argc, char *argv[]) {
         fflush(stderr);
       }
 
+      /* Output the genes */
+      print_genes(output_ptr, genes, ng, nodes, slen, output, num_seq, 0, NULL);
+      fflush(stdout);
+      if(trans_ptr != stdout)
+        write_translations(trans_ptr, genes, ng, nodes, seq, rseq, slen, &tinf, 
+                           num_seq);
+      if(nuc_ptr != stdout)
+        write_nucleotide_seqs(nuc_ptr, genes, ng, nodes, seq, rseq, useq, slen,
+                              &tinf, num_seq);
     }
 
     else { /* Metagenomic Version */
@@ -544,24 +549,15 @@ int main(int argc, char *argv[]) {
           write_start_file(start_ptr, nodes, nn, meta[max_phase].tinf, 
                            num_seq);
       }
-    }
 
-    /* Output the genes */
-    print_genes(output_ptr, genes, ng, nodes, slen, output, num_seq);
-    fflush(stdout);
-    if(trans_ptr != stdout) {
-      if(is_meta == 0)
-        write_translations(trans_ptr, genes, ng, nodes, seq, rseq, slen, &tinf, 
-                           num_seq);
-      else
+      /* Output the genes */
+      print_genes(output_ptr, genes, ng, nodes, slen, output, num_seq, 1,
+                  meta[max_phase].desc);
+      fflush(stdout);
+      if(trans_ptr != stdout)
         write_translations(trans_ptr, genes, ng, nodes, seq, rseq, slen,
                            meta[max_phase].tinf, num_seq);
-    }
-    if(nuc_ptr != stdout) {
-      if(is_meta == 0)
-        write_nucleotide_seqs(nuc_ptr, genes, ng, nodes, seq, rseq, useq, slen,
-                              &tinf, num_seq);
-      else
+      if(nuc_ptr != stdout)
         write_nucleotide_seqs(nuc_ptr, genes, ng, nodes, seq, rseq, useq, slen,
                               meta[max_phase].tinf, num_seq);
     }
@@ -625,7 +621,7 @@ void help() {
   fprintf(stderr, "file.\n");
   fprintf(stderr, "         -c:  Closed ends.  Do not allow genes to run off ");
   fprintf(stderr, "edges.\n");
-  fprintf(stderr, "         -d:  Write nucleotide sequence of genes to the ");
+  fprintf(stderr, "         -d:  Write nucleotide sequences of genes to the ");
   fprintf(stderr, "selected file.\n");
   fprintf(stderr, "         -f:  Select output format (gbk, gff, or sco).  ");
   fprintf(stderr, "Default is gbk.\n");

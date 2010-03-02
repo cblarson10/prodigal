@@ -38,7 +38,8 @@ int add_genes(struct _gene *, struct _node *, int);
 void tweak_final_starts(struct _gene *, int, struct _node *, int, struct
                        _training *);
 
-void print_genes(FILE *, struct _gene *, int, struct _node *, int, int, int);
+void print_genes(FILE *, struct _gene *, int, struct _node *, int, int, int,
+                 int, char *);
 void write_translations(FILE *, struct _gene *, int, struct _node *, 
                         unsigned char *, unsigned char *, int, 
                         struct _training *, int);

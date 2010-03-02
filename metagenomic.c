@@ -56,6 +56,99 @@ void initialize_metagenomic_bins(struct _metagenomic_bin *meta) {
   initialize_metagenome_27(meta[27].tinf);
   initialize_metagenome_28(meta[28].tinf);
   initialize_metagenome_29(meta[29].tinf);
+  sprintf(meta[0].desc, "%d\t%s\t%s\t%s\t%.1f\t%d\t%d\n", 0, 
+          "Micrococcus luteus NCTC 2665", "B", "Actinobacteria", 72.9,
+          meta[0].tinf->trans_table, meta[0].tinf->uses_sd);
+  sprintf(meta[1].desc, "%d\t%s\t%s\t%s\t%.1f\t%d\t%d\n", 1, 
+          "Thiobacillus denitrificans ATCC 25259", "B", "Betaproteobacteria",
+          66.1, meta[1].tinf->trans_table, meta[1].tinf->uses_sd);
+  sprintf(meta[2].desc, "%d\t%s\t%s\t%s\t%.1f\t%d\t%d\n", 2, 
+          "Bradyrhizobium sp. ORS278", "B", "Alphaproteobacteria", 65.5,
+          meta[2].tinf->trans_table, meta[2].tinf->uses_sd);
+  sprintf(meta[3].desc, "%d\t%s\t%s\t%s\t%.1f\t%d\t%d\n", 3, 
+          "Mycobacterium abscessus", "B", "Actinobacteria", 64.1,
+          meta[3].tinf->trans_table, meta[3].tinf->uses_sd);
+  sprintf(meta[4].desc, "%d\t%s\t%s\t%s\t%.1f\t%d\t%d\n", 4, 
+          "Halorhabdus utahensis DSM 12940", "A", "Euryarchaeota", 62.9,
+          meta[4].tinf->trans_table, meta[4].tinf->uses_sd);
+  sprintf(meta[5].desc, "%d\t%s\t%s\t%s\t%.1f\t%d\t%d\n", 5, 
+          "Hyphomonas neptunium ATCC 15444", "B", "Alphaproteobacteria", 61.9,
+          meta[5].tinf->trans_table, meta[5].tinf->uses_sd);
+  sprintf(meta[6].desc, "%d\t%s\t%s\t%s\t%.1f\t%d\t%d\n", 6, 
+          "Pseudomonas putida W619", "B", "Gammaproteobacteria", 61.4,
+          meta[6].tinf->trans_table, meta[6].tinf->uses_sd);
+  sprintf(meta[7].desc, "%d\t%s\t%s\t%s\t%.1f\t%d\t%d\n", 7, 
+          "Synechococcus sp. WH 7803", "B", "Cyanobacteria", 60.2,
+          meta[7].tinf->trans_table, meta[7].tinf->uses_sd);
+  sprintf(meta[8].desc, "%d\t%s\t%s\t%s\t%.1f\t%d\t%d\n", 8, 
+          "Mycobacterium leprae Br4923", "B", "Actinobacteria", 57.8,
+          meta[8].tinf->trans_table, meta[8].tinf->uses_sd);
+  sprintf(meta[9].desc, "%d\t%s\t%s\t%s\t%.1f\t%d\t%d\n", 9, 
+          "Pelobacter carbinolicus DSM 2380", "B", "Deltaproteobacteria", 55.1,
+          meta[9].tinf->trans_table, meta[9].tinf->uses_sd);
+  sprintf(meta[10].desc, "%d\t%s\t%s\t%s\t%.1f\t%d\t%d\n", 10, 
+          "Pyrobaculum arsenaticum DSM 13514", "A", "Crenarchaeota", 55.1,
+          meta[10].tinf->trans_table, meta[10].tinf->uses_sd);
+  sprintf(meta[11].desc, "%d\t%s\t%s\t%s\t%.1f\t%d\t%d\n", 11, 
+          "Corynebacterium glutamicum ATCC 13032", "B", "Actinobacteria", 53.8,
+          meta[11].tinf->trans_table, meta[11].tinf->uses_sd);
+  sprintf(meta[12].desc, "%d\t%s\t%s\t%s\t%.1f\t%d\t%d\n", 12, 
+          "Synechococcus sp. CC9311", "B", "Cyanobacteria", 52.4,
+          meta[12].tinf->trans_table, meta[12].tinf->uses_sd);
+  sprintf(meta[13].desc, "%d\t%s\t%s\t%s\t%.1f\t%d\t%d\n", 13, 
+          "Pectobacterium atrosepticum SCRI1043", "B","Gammaproteobacteria",
+          51.0, meta[13].tinf->trans_table, meta[13].tinf->uses_sd);
+  sprintf(meta[14].desc, "%d\t%s\t%s\t%s\t%.1f\t%d\t%d\n", 14, 
+          "Prosthecochloris aestuarii DSM 271", "B", "Bacteroidetes/Chlorobi",
+          50.1, meta[14].tinf->trans_table, meta[14].tinf->uses_sd);
+  sprintf(meta[15].desc, "%d\t%s\t%s\t%s\t%.1f\t%d\t%d\n", 15, 
+          "Anaplasma marginale str. Florida", "B", "Alphaproteobacteria", 49.8,
+          meta[15].tinf->trans_table, meta[15].tinf->uses_sd);
+  sprintf(meta[16].desc, "%d\t%s\t%s\t%s\t%.1f\t%d\t%d\n", 16, 
+          "Nitrosomonas eutropha C91", "B", "Betaproteobacteria", 48.5,
+          meta[16].tinf->trans_table, meta[16].tinf->uses_sd);
+  sprintf(meta[17].desc, "%d\t%s\t%s\t%s\t%.1f\t%d\t%d\n", 17, 
+          "Tropheryma whipplei TW08/27", "B", "Actinobacteria", 46.3,
+          meta[17].tinf->trans_table, meta[17].tinf->uses_sd);
+  sprintf(meta[18].desc, "%d\t%s\t%s\t%s\t%.1f\t%d\t%d\n", 18, 
+          "Pyrococcus abyssi GE5", "A", "Euryarchaeota", 44.7,
+          meta[18].tinf->trans_table, meta[18].tinf->uses_sd);
+  sprintf(meta[19].desc, "%d\t%s\t%s\t%s\t%.1f\t%d\t%d\n", 19, 
+          "Sulfurovum sp. NBC37-1", "B", "Epsilonproteobacteria", 43.9,
+          meta[19].tinf->trans_table, meta[19].tinf->uses_sd);
+  sprintf(meta[20].desc, "%d\t%s\t%s\t%s\t%.1f\t%d\t%d\n", 20, 
+          "Bacteroides fragilis YCH46", "B", "Bacteroidetes/Chlorobi", 43.2,
+          meta[0].tinf->trans_table, meta[20].tinf->uses_sd);
+  sprintf(meta[21].desc, "%d\t%s\t%s\t%s\t%.1f\t%d\t%d\n", 21, 
+          "Marinomonas sp. MWYL1", "B", "Gammaproteobacteria", 42.6,
+          meta[21].tinf->trans_table, meta[21].tinf->uses_sd);
+  sprintf(meta[22].desc, "%d\t%s\t%s\t%s\t%.1f\t%d\t%d\n", 22, 
+          "Legionella pneumophila str. Corby", "B", "Gammaproteobacteria", 
+          38.5, meta[22].tinf->trans_table, meta[22].tinf->uses_sd);
+  sprintf(meta[23].desc, "%d\t%s\t%s\t%s\t%.1f\t%d\t%d\n", 23, 
+          "Oceanobacillus iheyensis HTE831", "B", "Firmicutes", 35.7,
+          meta[23].tinf->trans_table, meta[23].tinf->uses_sd);
+  sprintf(meta[24].desc, "%d\t%s\t%s\t%s\t%.1f\t%d\t%d\n", 24, 
+          "Wolbachia endosymbiont of Drosophila melanogaster", "B", 
+          "Alphaproteobacteria", 35.2,
+          meta[24].tinf->trans_table, meta[24].tinf->uses_sd);
+  sprintf(meta[25].desc, "%d\t%s\t%s\t%s\t%.1f\t%d\t%d\n", 25, 
+          "Sulfolobus islandicus L.S.2.15", "A", "Crenarchaeota", 35.1,
+          meta[25].tinf->trans_table, meta[25].tinf->uses_sd);
+  sprintf(meta[26].desc, "%d\t%s\t%s\t%s\t%.1f\t%d\t%d\n", 26, 
+          "Francisella philomiragia subsp. philomiragia ATCC 25017", "B",
+          "Gammaproteobacteria", 32.6,
+          meta[26].tinf->trans_table, meta[26].tinf->uses_sd);
+  sprintf(meta[27].desc, "%d\t%s\t%s\t%s\t%.1f\t%d\t%d\n", 27, 
+          "Rickettsia felis URRWXCal2", "B", "Alphaproteobacteria", 32.5,
+          meta[27].tinf->trans_table, meta[27].tinf->uses_sd);
+  sprintf(meta[28].desc, "%d\t%s\t%s\t%s\t%.1f\t%d\t%d\n", 28, 
+          "Clostridium acetobutylicum ATCC 824", "B", "Firmicutes", 30.9,
+          meta[28].tinf->trans_table, meta[28].tinf->uses_sd);
+  sprintf(meta[29].desc, "%d\t%s\t%s\t%s\t%.1f\t%d\t%d\n", 29, 
+          "Mycoplasma arthritidis 158L3-1", "B", "Firmicutes", 30.7,
+          meta[29].tinf->trans_table, meta[29].tinf->uses_sd);
+
 }
 
 /*******************************************************************************
