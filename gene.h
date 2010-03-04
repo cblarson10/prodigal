@@ -22,6 +22,7 @@
 #define _GENE_H
 
 #include <stdio.h>
+#include "training.h"
 #include "node.h"
 #include "dprog.h"
 
@@ -39,7 +40,7 @@ void tweak_final_starts(struct _gene *, int, struct _node *, int, struct
                        _training *);
 
 void print_genes(FILE *, struct _gene *, int, struct _node *, int, int, int,
-                 int, char *);
+                 int, char *, struct _training *tinf, char *, char *);
 void write_translations(FILE *, struct _gene *, int, struct _node *, 
                         unsigned char *, unsigned char *, int, 
                         struct _training *, int);

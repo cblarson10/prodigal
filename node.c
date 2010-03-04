@@ -373,7 +373,8 @@ void calc_dicodon_gene(struct _training *tinf, unsigned char *seq, unsigned
 *******************************************************************************/
 
 void score_nodes(unsigned char *seq, unsigned char *rseq, int slen,
-                 struct _node *nod, int nn, struct _training *tinf) {
+                 struct _node *nod, int nn, struct _training *tinf,
+                 int closed) {
   int i, j;
   double negf, posf, rbs1, rbs2, sd_score, edge_gene;
 
@@ -392,7 +393,7 @@ void score_nodes(unsigned char *seq, unsigned char *rseq, int slen,
   /* Step 3: Score the start nodes */
   for(i = 0; i < nn; i++) {
     if(nod[i].type == STOP) continue;
-
+ 
     /* Does this gene run off the edge? */
     if(nod[i].edge == 1 || (nod[i].strand == 1 && is_stop(seq, nod[i].stop_val,
        tinf) == 0) || (nod[i].strand == -1 && is_stop(rseq, slen-1-
@@ -417,15 +418,23 @@ void score_nodes(unsigned char *seq, unsigned char *rseq, int slen,
       ** Penalize upstream score if choosing this start would stop   **
       ** the gene from running off the edge.                         **
       ****************************************************************/
-      if(i < 500 && nod[i].strand == 1)
-        for(j = i; j >= 0; j--)
-          if(nod[j].edge == 1 && nod[i].stop_val == nod[j].stop_val) 
-            nod[i].uscore += EDGE_UPS*tinf->st_wt;
-      if(i >= nn-500 && nod[i].strand == -1)
-        for(j = i; j < nn; j++)
-          if(nod[j].edge == 1 && nod[i].stop_val == nod[j].stop_val) 
-            nod[i].uscore += EDGE_UPS*tinf->st_wt;
- 
+      if(closed == 0 && nod[i].ndx == 0 && nod[i].strand == 1) 
+        nod[i].uscore += EDGE_UPS*tinf->st_wt; 
+      else if(closed == 0 && nod[i].ndx == slen-1 && nod[i].strand == -1)
+        nod[i].uscore += EDGE_UPS*tinf->st_wt; 
+      else if(i < 500 && nod[i].strand == 1) {
+        for(j = i-1; j >= 0; j--)
+          if(nod[j].edge == 1 && nod[i].stop_val == nod[j].stop_val) {
+            nod[i].uscore += EDGE_UPS*tinf->st_wt; break;
+          }
+      }
+      else if(i >= nn-500 && nod[i].strand == -1) {
+        for(j = i+1; j < nn; j++)
+          if(nod[j].edge == 1 && nod[i].stop_val == nod[j].stop_val) {
+            nod[i].uscore += EDGE_UPS*tinf->st_wt; break;
+          }
+      }
+
       /* Type Score */
       nod[i].tscore = tinf->type_wt[nod[i].type] * tinf->st_wt;
 
@@ -440,6 +449,17 @@ void score_nodes(unsigned char *seq, unsigned char *rseq, int slen,
           nod[i].rscore = sd_score;
       }
 
+    }
+
+    /* Convert starts at base 1 and slen to edge genes if that */
+    /* would improve their score. */
+    if(((nod[i].ndx == 0 && nod[i].strand == 1) || (nod[i].ndx == slen-1 &&
+       nod[i].strand == -1)) && nod[i].edge == 0 && nod[i].rscore + 
+       nod[i].tscore + nod[i].uscore < EDGE_BONUS*tinf->st_wt && closed == 0) {
+      nod[i].edge = 1;
+      nod[i].tscore = 0.0;
+      nod[i].uscore = EDGE_BONUS*tinf->st_wt;
+      nod[i].rscore = 0.0;
     }
 
     /* Penalize genes < 250bp, edge genes < 125bp */
@@ -459,6 +479,7 @@ void score_nodes(unsigned char *seq, unsigned char *rseq, int slen,
     /* Base Start Score */
     nod[i].sscore = nod[i].tscore + nod[i].rscore + nod[i].uscore;
     if(nod[i].cscore < 0) nod[i].sscore -= 0.5;
+
   }
 }
 

@@ -1,7 +1,10 @@
 VERSIPN 2.00
 
-* Output Change:  A definition line is now printed before each set of CDS
-entries, and a '//' is printed after each set of CDS.
+* Substantial Output Changes:  A definition line is now printed before each set
+of CDS entries, and a '//' is printed after each set of CDS.  Detailed
+information is now printed in /note fields, and in the attributes field of GFF.
+For more information, see the README file.
+* GFF3 Support:  The GFF output is now 9 columns (gff version 3).
 * Argument Change:  The '-f' option now specifies output format type (formerly
 this was done by '-o').
 * New Options:  -i, -o for input/output files, -p for metagenomic/single genome

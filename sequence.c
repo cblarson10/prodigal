@@ -45,7 +45,7 @@ int read_seq_training(FILE *fp, unsigned char *seq, unsigned char *useq,
       fprintf(stderr, "correctly.\n");
     }
     if(line[0] == '>' || (line[0] == 'S' && line[1] == 'Q') ||
-       (strncmp(line, "ORIGIN", 6) == 0)) {
+       (strlen(line) > 6 && strncmp(line, "ORIGIN", 6) == 0)) {
       hdr = 1;
       if(fhdr > 0) {
         for(i = 0; i < 12; i++) {
@@ -118,11 +118,14 @@ int read_seq_training(FILE *fp, unsigned char *seq, unsigned char *useq,
 /* This routine reads in the next sequence in a FASTA/GB/EMBL file */
 
 int next_seq_multi(FILE *fp, unsigned char *seq, unsigned char *useq,
-                   int *sctr, double *gc, int do_mask, mask *mlist, int *nm) {
+                   int *sctr, double *gc, int do_mask, mask *mlist, int *nm,
+                   char *cur_hdr, char *new_hdr) {
   char line[MAX_LINE+1];
   int reading_seq = 0, genbank_end = 0, bctr = 0, len = 0, wrn = 0;
   int gc_cont = 0, mask_beg = -1;
   unsigned int i, gapsize = 0;
+
+  sprintf(new_hdr, "Prodigal_Seq_%d", *sctr+2);
 
   if(*sctr > 0) reading_seq = 1;
   line[MAX_LINE] = '\0';
@@ -133,9 +136,29 @@ int next_seq_multi(FILE *fp, unsigned char *seq, unsigned char *useq,
       fprintf(stderr, "%d chars, sequence might not be read ", MAX_LINE);
       fprintf(stderr, "correctly.\n");
     }
+    if(strlen(line) > 10 && strncmp(line, "DEFINITION", 10) == 0) {
+      if(genbank_end == 0) {
+        strcpy(cur_hdr, line+12);
+        cur_hdr[strlen(cur_hdr)-1] = '\0';
+      }
+      else {
+        strcpy(new_hdr, line+12);
+        new_hdr[strlen(new_hdr)-1] = '\0';
+      }
+    }
     if(line[0] == '>' || (line[0] == 'S' && line[1] == 'Q') ||
-       (strncmp(line, "ORIGIN", 6) == 0)) {
-      if(reading_seq == 1 || genbank_end == 1 || *sctr > 0) break;
+       (strlen(line) > 6 && strncmp(line, "ORIGIN", 6) == 0)) {
+      if(reading_seq == 1 || genbank_end == 1 || *sctr > 0) {
+        if(line[0] == '>') {
+          strcpy(new_hdr, line+1);
+          new_hdr[strlen(new_hdr)-1] = '\0';
+        }
+        break;
+      }
+      if(line[0] == '>') {
+        strcpy(cur_hdr, line+1);
+        cur_hdr[strlen(cur_hdr)-1] = '\0';
+      }
       reading_seq = 1;
     }
     else if(reading_seq == 1 && (line[0] == '/' && line[1] == '/')) {

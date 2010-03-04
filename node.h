@@ -85,7 +85,7 @@ void calc_amino_bg(struct _training *, unsigned char *, unsigned char *, int,
                    struct _node *, int);
 
 void score_nodes(unsigned char *, unsigned char *, int, struct _node *, int,
-                 struct _training *);
+                 struct _training *, int);
 void raw_coding_score(unsigned char *, unsigned char *, int, struct _node *,
                       int, struct _training *);
 void rbs_score(unsigned char *, unsigned char *, int, struct _node *, int,

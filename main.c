@@ -25,6 +25,8 @@
 #include "dprog.h"
 #include "gene.h"
 
+#define VERSION "2.00"
+#define DATE "March, 2010"
 #define MIN_SINGLE_GENOME 1000
 
 void version();
@@ -37,10 +39,11 @@ int main(int argc, char *argv[]) {
   int rv, slen, nn, ng, i, ipath, *gc_frame, do_training, output, max_phase;
   int closed, do_mask, nmask, force_nonsd, user_tt, is_meta, num_seq, quiet;
   int piped;
-  double max_score;
+  double max_score, gc;
   unsigned char *seq, *rseq, *useq;
   char *train_file, *start_file, *trans_file, *nuc_file; 
   char *input_file, *output_file, input_copy[MAX_LINE];
+  char cur_header[MAX_LINE], new_header[MAX_LINE];
   FILE *input_ptr, *output_ptr, *start_ptr, *trans_ptr, *nuc_ptr;
   pid_t pid;
   struct _node *nodes;
@@ -183,7 +186,7 @@ int main(int argc, char *argv[]) {
   /* Print header */
   if(quiet == 0) {
     fprintf(stderr, "-------------------------------------\n");
-    fprintf(stderr, "PRODIGAL v2.00 [March, 2010]         \n");
+    fprintf(stderr, "PRODIGAL v%s [%s]         \n", VERSION, DATE);
     fprintf(stderr, "Univ of Tenn / Oak Ridge National Lab\n");
     fprintf(stderr, "Doug Hyatt, Loren Hauser, et al.     \n");
     fprintf(stderr, "-------------------------------------\n");
@@ -452,8 +455,10 @@ int main(int argc, char *argv[]) {
   }
 
   /* Read and process each sequence in the file in succession */
-  while((slen = next_seq_multi(input_ptr, seq, useq, &num_seq, &(tinf.gc), 
-         do_mask, mlist, &nmask)) != -1) {
+  sprintf(cur_header, "Prodigal_Seq_1");
+  sprintf(new_header, "Prodigal_Seq_2");
+  while((slen = next_seq_multi(input_ptr, seq, useq, &num_seq, &gc, 
+         do_mask, mlist, &nmask, cur_header, new_header)) != -1) {
     rcom_seq(seq, rseq, useq, slen);
     if(slen == 0) {
       fprintf(stderr, "\nSequence read failed (file must be Fasta, ");
@@ -479,7 +484,7 @@ int main(int argc, char *argv[]) {
         Second dynamic programming, using the dicodon statistics as the
         scoring function.                                
       ***********************************************************************/
-      score_nodes(seq, rseq, slen, nodes, nn, &tinf);
+      score_nodes(seq, rseq, slen, nodes, nn, &tinf, closed);
       if(start_ptr != stdout) 
         write_start_file(start_ptr, nodes, nn, &tinf, num_seq);
       record_overlapping_starts(nodes, nn, &tinf, 1);
@@ -493,8 +498,9 @@ int main(int argc, char *argv[]) {
       }
 
       /* Output the genes */
-      print_genes(output_ptr, genes, ng, nodes, slen, output, num_seq, 0, NULL);
-      fflush(stdout);
+      print_genes(output_ptr, genes, ng, nodes, slen, output, num_seq, 0, NULL,
+                  &tinf, cur_header, VERSION);
+      fflush(output_ptr);
       if(trans_ptr != stdout)
         write_translations(trans_ptr, genes, ng, nodes, seq, rseq, slen, &tinf, 
                            num_seq);
@@ -520,7 +526,7 @@ int main(int argc, char *argv[]) {
           qsort(nodes, nn, sizeof(struct _node), &compare_nodes);
         }
         reset_node_scores(nodes, nn);
-        score_nodes(seq, rseq, slen, nodes, nn, meta[i].tinf);
+        score_nodes(seq, rseq, slen, nodes, nn, meta[i].tinf, closed);
         record_overlapping_starts(nodes, nn, meta[i].tinf, 1);
         ipath = dprog(nodes, nn, meta[i].tinf, 1);
         if(i == 0 || nodes[ipath].score > max_score) {
@@ -532,28 +538,26 @@ int main(int argc, char *argv[]) {
         }
       }    
 
+      /* Recover the nodes for the best of the runs */
+      memset(nodes, 0, nn*sizeof(struct _node));
+      nn = add_nodes(seq, rseq, slen, nodes, closed, mlist, nmask,
+                       meta[max_phase].tinf);
+      qsort(nodes, nn, sizeof(struct _node), &compare_nodes);
+      score_nodes(seq, rseq, slen, nodes, nn, meta[max_phase].tinf, closed);
+      if(start_ptr != stdout) 
+        write_start_file(start_ptr, nodes, nn, meta[max_phase].tinf, 
+                         num_seq);
+
       if(quiet == 0) {
         fprintf(stderr, "done!\n"); 
         fflush(stderr);
       }
 
-      /* Recover the nodes for the best of the runs */
-      if(start_ptr != stdout || meta[max_phase].tinf->trans_table !=
-         meta[i-1].tinf->trans_table) {
-        memset(nodes, 0, nn*sizeof(struct _node));
-        nn = add_nodes(seq, rseq, slen, nodes, closed, mlist, nmask,
-                       meta[max_phase].tinf);
-        qsort(nodes, nn, sizeof(struct _node), &compare_nodes);
-        score_nodes(seq, rseq, slen, nodes, nn, meta[max_phase].tinf);
-        if(start_ptr != stdout) 
-          write_start_file(start_ptr, nodes, nn, meta[max_phase].tinf, 
-                           num_seq);
-      }
-
       /* Output the genes */
       print_genes(output_ptr, genes, ng, nodes, slen, output, num_seq, 1,
-                  meta[max_phase].desc);
-      fflush(stdout);
+                  meta[max_phase].desc, meta[max_phase].tinf, cur_header, 
+                  VERSION);
+      fflush(output_ptr);
       if(trans_ptr != stdout)
         write_translations(trans_ptr, genes, ng, nodes, seq, rseq, slen,
                            meta[max_phase].tinf, num_seq);
@@ -568,6 +572,8 @@ int main(int argc, char *argv[]) {
     memset(useq, 0, (slen/8+1)*sizeof(unsigned char));
     memset(nodes, 0, nn*sizeof(struct _node));
     nn = 0; slen = 0; ipath = 0; nmask = 0;
+    strcpy(cur_header, new_header);
+    sprintf(new_header, "Prodigal_Seq_%d\n", num_seq+1);
   }
 
   /* Free all memory */
@@ -594,7 +600,7 @@ int main(int argc, char *argv[]) {
 }
 
 void version() {
-  fprintf(stderr, "\nProdigal V2.00: March, 2010\n\n");
+  fprintf(stderr, "\nProdigal V%s: %s\n\n", VERSION, DATE);
   exit(0);
 }
 

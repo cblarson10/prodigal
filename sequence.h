@@ -37,6 +37,7 @@
 #define GTG 1
 #define TTG 2
 #define STOP 3
+#define ACCEPT "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.:^*$@!+_?-|"
 
 typedef struct _mask {
   int begin;
@@ -46,7 +47,7 @@ typedef struct _mask {
 int read_seq_training(FILE *, unsigned char *, unsigned char *, double *, int,
                       mask *, int *);
 int next_seq_multi(FILE *, unsigned char *, unsigned char *, int *, double *,
-                   int, mask *, int *);
+                   int, mask *, int *, char *, char *);
 void rcom_seq(unsigned char *, unsigned char *, unsigned char *, int);
 
 int is_a(unsigned char *, int);
