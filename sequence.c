@@ -40,9 +40,9 @@ int read_seq_training(FILE *fp, unsigned char *seq, unsigned char *useq,
   while(fgets(line, MAX_LINE, fp) != NULL) {
     if(hdr == 0 && line[strlen(line)-1] != '\n' && wrn == 0) {
       wrn = 1;
-      fprintf(stderr, "Warning: saw non-sequence line longer than ");
+      fprintf(stderr, "\n\nWarning: saw non-sequence line longer than ");
       fprintf(stderr, "%d chars, sequence might not be read ", MAX_LINE);
-      fprintf(stderr, "correctly.\n");
+      fprintf(stderr, "correctly.\n\n");
     }
     if(line[0] == '>' || (line[0] == 'S' && line[1] == 'Q') ||
        (strlen(line) > 6 && strncmp(line, "ORIGIN", 6) == 0)) {
@@ -101,8 +101,10 @@ int read_seq_training(FILE *fp, unsigned char *seq, unsigned char *useq,
       }
     }
     if(len+MAX_LINE >= MAX_SEQ) {
-      fprintf(stderr, "Sequence too long (max %d permitted).\n", MAX_SEQ);
-      exit(53);
+      fprintf(stderr, "\n\nWarning:  Sequence is long (max %d for training).\n",
+              MAX_SEQ);
+      fprintf(stderr, "Training on the first %d bases.\n\n", MAX_SEQ);
+      break;
     }
   }
   if(fhdr > 1) {
@@ -132,9 +134,9 @@ int next_seq_multi(FILE *fp, unsigned char *seq, unsigned char *useq,
   while(fgets(line, MAX_LINE, fp) != NULL) {
     if(reading_seq == 0 && line[strlen(line)-1] != '\n' && wrn == 0) {
       wrn = 1;
-      fprintf(stderr, "Warning: saw non-sequence line longer than ");
+      fprintf(stderr, "\n\nWarning: saw non-sequence line longer than ");
       fprintf(stderr, "%d chars, sequence might not be read ", MAX_LINE);
-      fprintf(stderr, "correctly.\n");
+      fprintf(stderr, "correctly.\n\n");
     }
     if(strlen(line) > 10 && strncmp(line, "DEFINITION", 10) == 0) {
       if(genbank_end == 0) {

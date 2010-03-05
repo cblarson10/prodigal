@@ -25,9 +25,11 @@
 #include "dprog.h"
 #include "gene.h"
 
-#define VERSION "2.00"
+#define VERSION "2.00b"
 #define DATE "March, 2010"
-#define MIN_SINGLE_GENOME 1000
+
+#define MIN_SINGLE_GENOME 20000
+#define IDEAL_SINGLE_GENOME 100000
 
 void version();
 void usage(char *);
@@ -209,8 +211,8 @@ int main(int argc, char *argv[]) {
       if(quiet == 0)
         fprintf(stderr, "Reading in training data from file %s...", train_file);
       if(user_tt > 0 && user_tt != tinf.trans_table) { 
-        fprintf(stderr, "Warning: user-specified translation table does not ");
-        fprintf(stderr, "match the one in the specified training file! \n");
+        fprintf(stderr, "\n\nWarning: user-specified translation table does");
+        fprintf(stderr, "not match the one in the specified training file! \n\n");
         fflush(stderr);
       }
       if(rv == -1) { 
@@ -302,10 +304,17 @@ int main(int argc, char *argv[]) {
       exit(9);
     }
     if(slen < MIN_SINGLE_GENOME) {
-      fprintf(stderr, "\n\nSequence must be %d", MIN_SINGLE_GENOME);
+      fprintf(stderr, "\n\nError:  Sequence must be %d", MIN_SINGLE_GENOME);
       fprintf(stderr, " characters (only %d read).\n(Consider", slen);
-      fprintf(stderr, " running with the -p meta option.)\n\n");
+      fprintf(stderr, " running with the -p meta option or finding");
+      fprintf(stderr, " more contigs from the same genome.)\n\n");
       exit(10);
+    }
+    if(slen < IDEAL_SINGLE_GENOME) {
+      fprintf(stderr, "\n\nWarning:  ideally Prodigal should be given at");
+      fprintf(stderr, " least %d bases for ", IDEAL_SINGLE_GENOME);
+      fprintf(stderr, "training.\nYou may get better results with the ");
+      fprintf(stderr, "-p meta option.\n\n");
     }
     rcom_seq(seq, rseq, useq, slen);
     if(quiet == 0) {

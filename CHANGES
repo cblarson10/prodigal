@@ -1,5 +1,7 @@
-VERSIPN 2.00
+VERSION 2.00
 
+* Added metagenomic genefinding routines to Prodigal, accessible via the -p
+meta option.
 * Substantial Output Changes:  A definition line is now printed before each set
 of CDS entries, and a '//' is printed after each set of CDS.  Detailed
 information is now printed in /note fields, and in the attributes field of GFF.
@@ -9,8 +11,6 @@ For more information, see the README file.
 this was done by '-o').
 * New Options:  -i, -o for input/output files, -p for metagenomic/single genome
 modes, -d to write DNA sequence of genes to a file, -q to run quietly.
-* Added metagenomic genefinding routines to Prodigal, accessible via the -p
-meta option.
 * Built multiple FASTA handling into the base program (draft_prodigal.pl
 script is no longer needed).
 * Changed existing rules and added new ones specifically to handle large
