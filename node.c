@@ -1326,11 +1326,28 @@ double intergenic_mod(struct _node *n1, struct _node *n2, struct _training
   done at the user's request.
 *******************************************************************************/
 void write_start_file(FILE *fh, struct _node *nod, int nn, struct _training
-                      *tinf, int sctr) {
+                      *tinf, int sctr, int slen, int is_meta, char *mdesc, 
+                      char *version, char *header) {
   int i, prev_stop = -1, prev_strand = 0, st_type;
   double rbs1, rbs2;
   char sd_string[28][100], sd_spacer[28][20], qt[10];
   char type_string[4][5] = { "ATG", "GTG", "TTG" , "Edge" };
+  char seq_data[MAX_LINE*2], run_data[MAX_LINE];
+
+  /* Initialize sequence data */
+  sprintf(seq_data, "seqnum=%d;seqlen=%d;seqhdr=\"%s\"", sctr, slen, header);
+
+  /* Initialize run data string */
+  if(is_meta == 0) {
+    sprintf(run_data, "version=Prodigal.v%s;run_type=Single;", version);
+    sprintf(run_data, "%smodel=\"Ab initio\";", run_data);
+  }
+  else {
+    sprintf(run_data, "version=Prodigal.v%s;run_type=Metagenomic;", version);
+    sprintf(run_data, "%smodel=\"%s\";", run_data, mdesc);
+  }
+  sprintf(run_data, "%sgc_cont=%.2f;transl_table=%d;uses_sd=%d", run_data,
+          tinf->gc*100.0, tinf->trans_table, tinf->uses_sd);
  
   strcpy(sd_string[0], "None");
   strcpy(sd_spacer[0], "None");
@@ -1390,7 +1407,10 @@ void write_start_file(FILE *fh, struct _node *nod, int nn, struct _training
   strcpy(sd_spacer[27], "5-10bp");
 
   qsort(nod, nn, sizeof(struct _node), &stopcmp_nodes);
-  fprintf(fh, "# Prodigal Sequence %d\n", sctr);
+
+  fprintf(fh, "# Sequence Data: %s\n", seq_data);
+  fprintf(fh, "# Run Data: %s\n\n", run_data);
+
   fprintf(fh, "Beg\tEnd\tStd\tTotal\tCodPot\tStrtSc\tCodon\tRBSMot\t");
   fprintf(fh, "Spacer\tRBSScr\tUpsScr\tTypeScr\n");
   for(i = 0; i < nn; i++) {
@@ -1443,6 +1463,7 @@ void write_start_file(FILE *fh, struct _node *nod, int nn, struct _training
     }
     fprintf(fh, "%.2f\t%.2f\n", nod[i].uscore, nod[i].tscore);
   }
+  fprintf(fh, "\n");
   qsort(nod, nn, sizeof(struct _node), &compare_nodes);
 }
 

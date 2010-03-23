@@ -111,7 +111,8 @@ void find_best_upstream_motif(struct _training *, unsigned char *, unsigned
 void update_motif_counts(double [4][4][4096], double *, unsigned char *,
                          unsigned char *, int, struct _node *, int);
 
-void write_start_file(FILE *, struct _node *, int, struct _training *, int);
+void write_start_file(FILE *, struct _node *, int, struct _training *, int,
+                      int, int, char *, char *, char *);
 
 int cross_mask(int, int, mask *, int);
 

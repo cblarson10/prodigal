@@ -222,6 +222,24 @@ int next_seq_multi(FILE *fp, unsigned char *seq, unsigned char *useq,
   return len;
 }
 
+/* Fills in the first valid word of a GFF header */
+void calc_short_header(char *header, char *short_header, int sctr) {
+  int size;
+  char accept[500];
+
+  /* Valid GFF characters for first word of header */
+  strcpy(accept, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
+  strcat(accept, "0123456789.:^*$@!+_?-|");
+
+  /* Calculate short version of header */
+  size = (int)strspn(header, accept);
+  if(size > 3 && size < 100) {
+    strncpy(short_header, header, size);
+    short_header[size] = '\0';
+  }
+  else sprintf(short_header, "Prodigal_Seq_%d", sctr);
+}
+
 /* Takes rseq and fills it up with the rev complement of seq */
 
 void rcom_seq(unsigned char *seq, unsigned char *rseq, unsigned char *useq, 

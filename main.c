@@ -25,7 +25,7 @@
 #include "dprog.h"
 #include "gene.h"
 
-#define VERSION "2.00b"
+#define VERSION "2.00"
 #define DATE "March, 2010"
 
 #define MIN_SINGLE_GENOME 20000
@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
   unsigned char *seq, *rseq, *useq;
   char *train_file, *start_file, *trans_file, *nuc_file; 
   char *input_file, *output_file, input_copy[MAX_LINE];
-  char cur_header[MAX_LINE], new_header[MAX_LINE];
+  char cur_header[MAX_LINE], new_header[MAX_LINE], short_header[MAX_LINE];
   FILE *input_ptr, *output_ptr, *start_ptr, *trans_ptr, *nuc_ptr;
   pid_t pid;
   struct _node *nodes;
@@ -480,6 +480,9 @@ int main(int argc, char *argv[]) {
       fflush(stderr);
     }
 
+    /* Calculate short header for this sequence */
+    calc_short_header(cur_header, short_header, num_seq);
+
     if(is_meta == 0) { /* Single Genome Version */
 
       /***********************************************************************
@@ -495,12 +498,14 @@ int main(int argc, char *argv[]) {
       ***********************************************************************/
       score_nodes(seq, rseq, slen, nodes, nn, &tinf, closed);
       if(start_ptr != stdout) 
-        write_start_file(start_ptr, nodes, nn, &tinf, num_seq);
+        write_start_file(start_ptr, nodes, nn, &tinf, num_seq, slen, 0, NULL,
+                         VERSION, cur_header);
       record_overlapping_starts(nodes, nn, &tinf, 1);
       ipath = dprog(nodes, nn, &tinf, 1);
       eliminate_bad_genes(nodes, ipath, &tinf);
       ng = add_genes(genes, nodes, ipath);
       tweak_final_starts(genes, ng, nodes, nn, &tinf);
+      record_gene_data(genes, ng, nodes, &tinf, num_seq);
       if(quiet == 0) {
         fprintf(stderr, "done!\n"); 
         fflush(stderr);
@@ -508,14 +513,14 @@ int main(int argc, char *argv[]) {
 
       /* Output the genes */
       print_genes(output_ptr, genes, ng, nodes, slen, output, num_seq, 0, NULL,
-                  &tinf, cur_header, VERSION);
+                  &tinf, cur_header, short_header, VERSION);
       fflush(output_ptr);
       if(trans_ptr != stdout)
         write_translations(trans_ptr, genes, ng, nodes, seq, rseq, slen, &tinf, 
-                           num_seq);
+                           num_seq, short_header);
       if(nuc_ptr != stdout)
         write_nucleotide_seqs(nuc_ptr, genes, ng, nodes, seq, rseq, useq, slen,
-                              &tinf, num_seq);
+                              &tinf, num_seq, short_header);
     }
 
     else { /* Metagenomic Version */
@@ -544,6 +549,7 @@ int main(int argc, char *argv[]) {
           eliminate_bad_genes(nodes, ipath, meta[i].tinf);
           ng = add_genes(genes, nodes, ipath);
           tweak_final_starts(genes, ng, nodes, nn, meta[i].tinf);
+          record_gene_data(genes, ng, nodes, meta[i].tinf, num_seq);
         }
       }    
 
@@ -555,7 +561,8 @@ int main(int argc, char *argv[]) {
       score_nodes(seq, rseq, slen, nodes, nn, meta[max_phase].tinf, closed);
       if(start_ptr != stdout) 
         write_start_file(start_ptr, nodes, nn, meta[max_phase].tinf, 
-                         num_seq);
+                         num_seq, slen, 1, meta[max_phase].desc, VERSION,
+                         cur_header);
 
       if(quiet == 0) {
         fprintf(stderr, "done!\n"); 
@@ -565,14 +572,14 @@ int main(int argc, char *argv[]) {
       /* Output the genes */
       print_genes(output_ptr, genes, ng, nodes, slen, output, num_seq, 1,
                   meta[max_phase].desc, meta[max_phase].tinf, cur_header, 
-                  VERSION);
+                  short_header, VERSION);
       fflush(output_ptr);
       if(trans_ptr != stdout)
         write_translations(trans_ptr, genes, ng, nodes, seq, rseq, slen,
-                           meta[max_phase].tinf, num_seq);
+                           meta[max_phase].tinf, num_seq, short_header);
       if(nuc_ptr != stdout)
         write_nucleotide_seqs(nuc_ptr, genes, ng, nodes, seq, rseq, useq, slen,
-                              meta[max_phase].tinf, num_seq);
+                              meta[max_phase].tinf, num_seq, short_header);
     }
 
     /* Reset all the sequence/dynamic programming variables */
@@ -583,6 +590,11 @@ int main(int argc, char *argv[]) {
     nn = 0; slen = 0; ipath = 0; nmask = 0;
     strcpy(cur_header, new_header);
     sprintf(new_header, "Prodigal_Seq_%d\n", num_seq+1);
+  }
+
+  if(num_seq == 0) {
+    fprintf(stderr, "\nError:  no input sequences to analyze.\n\n");
+    exit(18);
   }
 
   /* Free all memory */

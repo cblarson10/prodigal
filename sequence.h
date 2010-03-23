@@ -50,6 +50,8 @@ int next_seq_multi(FILE *, unsigned char *, unsigned char *, int *, double *,
                    int, mask *, int *, char *, char *);
 void rcom_seq(unsigned char *, unsigned char *, unsigned char *, int);
 
+void calc_short_header(char *header, char *short_header, int);
+
 int is_a(unsigned char *, int);
 int is_c(unsigned char *, int);
 int is_g(unsigned char *, int);

@@ -192,32 +192,13 @@ void tweak_final_starts(struct _gene *genes, int ng, struct _node *nod,
   }
 }
 
-/* Print the genes.  'Flag' indicates which format to use. */
-void print_genes(FILE *fp, struct _gene *genes, int ng, struct _node *nod, 
-                 int slen, int flag, int sctr, int is_meta, char *mdesc,
-                 struct _training *tinf, char *header, char *version) {
-  int i, size, ndx, sndx, partial_left, partial_right, st_type;
+void record_gene_data(struct _gene *genes, int ng, struct _node *nod,
+                      struct _training *tinf, int sctr) {
+
+  int i, ndx, sndx, partial_left, partial_right, st_type;
   double rbs1, rbs2;
-  char left[50], right[50], accept[500], score_data[MAX_LINE];
-  char seq_data[MAX_LINE*2], run_data[MAX_LINE];
-  char short_hdr[MAX_LINE], gene_data[MAX_LINE];
   char sd_string[28][100], sd_spacer[28][20], qt[10];
   char type_string[4][5] = { "ATG", "GTG", "TTG" , "Edge" };
-
-  /* Initialize sequence data */
-  sprintf(seq_data, "seqnum=%d;seqlen=%d;seqhdr=\"%s\"", sctr, slen, header);
-
-  /* Initialize run data string */
-  if(is_meta == 0) {
-    sprintf(run_data, "version=Prodigal.v%s;run_type=Single;", version);
-    sprintf(run_data, "%smodel=\"Ab initio\";", run_data);
-  }
-  else {
-    sprintf(run_data, "version=Prodigal.v%s;run_type=Metagenomic;", version);
-    sprintf(run_data, "%smodel=\"%s\";", run_data, mdesc);
-  }
-  sprintf(run_data, "%sgc_cont=%.2f;transl_table=%d;uses_sd=%d", run_data, 
-          tinf->gc*100.0, tinf->trans_table, tinf->uses_sd);
 
   /* Initialize RBS string information for default SD */
   strcpy(sd_string[0], "None");
@@ -277,31 +258,6 @@ void print_genes(FILE *fp, struct _gene *genes, int ng, struct _node *nod,
   strcpy(sd_string[27], "AGGAGG");
   strcpy(sd_spacer[27], "5-10bp");
 
-  /* Valid GFF characters for first word of header */
-  strcpy(accept, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
-  strcat(accept, "0123456789.:^*$@!+_?-|");
-  strcpy(left, "");
-  strcpy(right, "");
-
-  /* Calculate short version of header */
-  size = (int)strspn(header, accept);
-  if(size > 3 && size < 100) {
-    strncpy(short_hdr, header, size);
-    short_hdr[size] = '\0';
-  }
-  else sprintf(short_hdr, "Prodigal_Seq_%d", sctr);
-
-  /* Print the gff header once */
-  if(flag == 3 && sctr == 1) fprintf(fp, "##gff-version  3\n");
-
-  /* Print sequence/model information */
-  if(flag == 0) fprintf(fp, "DEFINITION  %s;%s\n", seq_data, run_data);
-  else if(flag != 1) {
-    fprintf(fp, "##Sequence Data: %s\n", seq_data);
-    fprintf(fp, "##Model Data: %s\n", run_data);
-  }
-  
-  /* Print the genes */
   for(i = 0; i < ng; i++) {
     ndx = genes[i].start_ndx;
     sndx = genes[i].stop_ndx;
@@ -318,42 +274,96 @@ void print_genes(FILE *fp, struct _gene *genes, int ng, struct _node *nod,
     if(nod[ndx].edge == 1) st_type = 3;
     else st_type = nod[ndx].type;
 
-    sprintf(gene_data, "ID=%d_%d;partial=%d%d;type=%s;", sctr, i+1, partial_left,
-            partial_right, type_string[st_type]);
+    sprintf(genes[i].gene_data, "ID=%d_%d;partial=%d%d;type=%s;", sctr, i+1,
+            partial_left, partial_right, type_string[st_type]);
 
     /* Record rbs data */
     rbs1 = tinf->rbs_wt[nod[ndx].rbs[0]]*tinf->st_wt;
     rbs2 = tinf->rbs_wt[nod[ndx].rbs[1]]*tinf->st_wt;
     if(tinf->uses_sd == 1) {
       if(rbs1 > rbs2)
-        sprintf(gene_data, "%srbs_motif=%s;rbs_spacer=%s", gene_data,
-                sd_string[nod[ndx].rbs[0]], sd_spacer[nod[ndx].rbs[0]]);
+        sprintf(genes[i].gene_data, "%srbs_motif=%s;rbs_spacer=%s", 
+                genes[i].gene_data, sd_string[nod[ndx].rbs[0]], 
+                sd_spacer[nod[ndx].rbs[0]]);
       else
-        sprintf(gene_data, "%srbs_motif=%s;rbs_spacer=%s", gene_data,
-                sd_string[nod[ndx].rbs[1]], sd_spacer[nod[ndx].rbs[1]]);
+        sprintf(genes[i].gene_data, "%srbs_motif=%s;rbs_spacer=%s", 
+                genes[i].gene_data, sd_string[nod[ndx].rbs[1]], 
+                sd_spacer[nod[ndx].rbs[1]]);
     }
     else {
       mer_text(qt, nod[ndx].mot.len, nod[ndx].mot.ndx);
       if(tinf->no_mot > -0.5 && rbs1 > rbs2 && rbs1 > nod[ndx].mot.score *
          tinf->st_wt)
-        sprintf(gene_data, "%srbs_motif=%s;rbs_spacer=%s", gene_data,
-                sd_string[nod[ndx].rbs[0]], sd_spacer[nod[ndx].rbs[0]]);
+        sprintf(genes[i].gene_data, "%srbs_motif=%s;rbs_spacer=%s", 
+                genes[i].gene_data, sd_string[nod[ndx].rbs[0]], 
+                sd_spacer[nod[ndx].rbs[0]]);
       else if(tinf->no_mot > -0.5 && rbs2 >= rbs1 && rbs2 > nod[ndx].mot.score *
               tinf->st_wt)
-        sprintf(gene_data, "%srbs_motif=%s;rbs_spacer=%s", gene_data,
-                sd_string[nod[ndx].rbs[1]], sd_spacer[nod[ndx].rbs[1]]);
+        sprintf(genes[i].gene_data, "%srbs_motif=%s;rbs_spacer=%s", 
+                genes[i].gene_data, sd_string[nod[ndx].rbs[1]], 
+                sd_spacer[nod[ndx].rbs[1]]);
       else if(nod[ndx].mot.len == 0) 
-        sprintf(gene_data, "%srbs_motif=None;rbs_spacer=None", gene_data);
-      else sprintf(gene_data, "%srbs_motif=%s;rbs_spacer=%dbp", gene_data, qt, 
-                   nod[ndx].mot.spacer);
+        sprintf(genes[i].gene_data, "%srbs_motif=None;rbs_spacer=None", 
+                genes[i].gene_data);
+      else sprintf(genes[i].gene_data, "%srbs_motif=%s;rbs_spacer=%dbp", 
+                   genes[i].gene_data, qt, nod[ndx].mot.spacer);
     }
 
     /* Record score data */
-    sprintf(score_data, "score=%.2f;", nod[ndx].cscore + nod[ndx].sscore);
-    sprintf(score_data, 
+    sprintf(genes[i].score_data, "score=%.2f;", nod[ndx].cscore + 
+            nod[ndx].sscore);
+    sprintf(genes[i].score_data, 
      "score=%.2f;cscore=%.2f;sscore=%.2f;rscore=%.2f;uscore=%.2f;tscore=%.2f",
      nod[ndx].cscore+nod[ndx].sscore,nod[ndx].cscore, nod[ndx].sscore, 
      nod[ndx].rscore, nod[ndx].uscore, nod[ndx].tscore);
+  }
+
+}
+
+/* Print the genes.  'Flag' indicates which format to use. */
+void print_genes(FILE *fp, struct _gene *genes, int ng, struct _node *nod, 
+                 int slen, int flag, int sctr, int is_meta, char *mdesc,
+                 struct _training *tinf, char *header, char *short_hdr,
+                 char *version) {
+  int i, ndx, sndx;
+  char left[50], right[50];
+  char seq_data[MAX_LINE*2], run_data[MAX_LINE];
+
+  /* Initialize sequence data */
+  sprintf(seq_data, "seqnum=%d;seqlen=%d;seqhdr=\"%s\"", sctr, slen, header);
+
+  /* Initialize run data string */
+  if(is_meta == 0) {
+    sprintf(run_data, "version=Prodigal.v%s;run_type=Single;", version);
+    sprintf(run_data, "%smodel=\"Ab initio\";", run_data);
+  }
+  else {
+    sprintf(run_data, "version=Prodigal.v%s;run_type=Metagenomic;", version);
+    sprintf(run_data, "%smodel=\"%s\";", run_data, mdesc);
+  }
+  sprintf(run_data, "%sgc_cont=%.2f;transl_table=%d;uses_sd=%d", run_data, 
+          tinf->gc*100.0, tinf->trans_table, tinf->uses_sd);
+
+  strcpy(left, "");
+  strcpy(right, "");
+
+  /* Print the gff header once */
+  if(flag == 3 && sctr == 1) fprintf(fp, "##gff-version  3\n");
+
+  /* Print sequence/model information */
+  if(flag == 0) {
+    fprintf(fp, "DEFINITION  %s;%s\n", seq_data, run_data);
+    fprintf(fp, "FEATURES             Location/Qualifiers\n");
+  }
+  else if(flag != 1) {
+    fprintf(fp, "# Sequence Data: %s\n", seq_data);
+    fprintf(fp, "# Model Data: %s\n", run_data);
+  }
+  
+  /* Print the genes */
+  for(i = 0; i < ng; i++) {
+    ndx = genes[i].start_ndx;
+    sndx = genes[i].stop_ndx;
 
     /* Print the coordinates and data */
     if(nod[ndx].strand == 1) {
@@ -366,7 +376,8 @@ void print_genes(FILE *fp, struct _gene *genes, int ng, struct _node *nod,
       if(flag == 0) {
         fprintf(fp, "     CDS             %s..%s\n", left, right);
         fprintf(fp, "                     ");
-        fprintf(fp, "/note=\"%s;%s\"\n", gene_data, score_data);
+        fprintf(fp, "/note=\"%s;%s\"\n", genes[i].gene_data,
+                genes[i].score_data);
       }
       if(flag == 1)
         fprintf(fp, "gene_prodigal=%d|1|f|y|y|3|0|%d|%d|%d|%d|-1|-1|1.0\n", i+1,
@@ -376,7 +387,8 @@ void print_genes(FILE *fp, struct _gene *genes, int ng, struct _node *nod,
       if(flag == 3) {
         fprintf(fp, "%s\tProdigal_v%s\tCDS\t%d\t%d\t%.1f\t+\t0\t%s;%s", 
                 short_hdr, version, genes[i].begin, genes[i].end, 
-                nod[ndx].cscore+nod[ndx].sscore, gene_data, score_data);
+                nod[ndx].cscore+nod[ndx].sscore, genes[i].gene_data,
+                genes[i].score_data);
         fprintf(fp, "\n"); 
       }
     }
@@ -390,7 +402,8 @@ void print_genes(FILE *fp, struct _gene *genes, int ng, struct _node *nod,
       if(flag == 0) {
         fprintf(fp, "     CDS             complement(%s..%s)\n", left, right);
         fprintf(fp, "                     ");
-        fprintf(fp, "/note=\"%s;%s\"\n", gene_data, score_data);
+        fprintf(fp, "/note=\"%s;%s\"\n", genes[i].gene_data,
+                genes[i].score_data);
       }
       if(flag == 1)
         fprintf(fp, "gene_prodigal=%d|1|r|y|y|3|0|%d|%d|%d|%d|-1|-1|1.0\n", i+1,
@@ -401,7 +414,8 @@ void print_genes(FILE *fp, struct _gene *genes, int ng, struct _node *nod,
       if(flag == 3) {
         fprintf(fp, "%s\tProdigal_v%s\tCDS\t%d\t%d\t%.1f\t-\t0\t%s;%s",
                 short_hdr, version, genes[i].begin, genes[i].end, 
-                nod[ndx].cscore+nod[ndx].sscore, gene_data, score_data);
+                nod[ndx].cscore+nod[ndx].sscore, genes[i].gene_data,
+                genes[i].score_data);
         fprintf(fp, "\n"); 
       }
     }
@@ -415,13 +429,14 @@ void print_genes(FILE *fp, struct _gene *genes, int ng, struct _node *nod,
 /* Print the gene translations */
 void write_translations(FILE *fh, struct _gene *genes, int ng, struct 
                         _node *nod, unsigned char *seq, unsigned char *rseq, 
-                        int slen, struct _training *tinf, int sctr) {
+                        int slen, struct _training *tinf, int sctr,
+                        char *short_hdr) {
   int i, j;
 
   for(i = 0; i < ng; i++) {
     if(nod[genes[i].start_ndx].strand == 1) {
-      fprintf(fh, ">Prodigal Sequence %d Gene %d # %d # %d # 1\n", sctr, i+1,
-              genes[i].begin, genes[i].end);
+      fprintf(fh, ">%s_%d_%d # %d # %d # 1 # %s\n", short_hdr, sctr, i+1,
+              genes[i].begin, genes[i].end, genes[i].gene_data);
       for(j = genes[i].begin; j < genes[i].end-3; j+=3) {
         fprintf(fh, "%c", amino(seq, j-1, tinf, j==genes[i].begin?1:0 &&
                 (1-nod[genes[i].start_ndx].edge)));
@@ -430,8 +445,8 @@ void write_translations(FILE *fh, struct _gene *genes, int ng, struct
       if((j-genes[i].begin)%180 != 0) fprintf(fh, "\n");
     }
     else {
-      fprintf(fh, ">Prodigal Sequence %d Gene %d # %d # %d # -1\n", sctr, i+1,
-              genes[i].begin, genes[i].end);
+      fprintf(fh, ">%s_%d_%d # %d # %d # -1 # %s\n", short_hdr, sctr, i+1,
+              genes[i].begin, genes[i].end, genes[i].gene_data);
       for(j = slen+1-genes[i].end; j < slen+1-genes[i].begin-3; j+=3) {
         fprintf(fh, "%c", amino(rseq, j-1, tinf, j==slen+1-genes[i].end?1:0 &&
                 (1-nod[genes[i].start_ndx].edge)));
@@ -446,13 +461,13 @@ void write_translations(FILE *fh, struct _gene *genes, int ng, struct
 void write_nucleotide_seqs(FILE *fh, struct _gene *genes, int ng, struct 
                            _node *nod, unsigned char *seq, unsigned char *rseq,
                            unsigned char *useq, int slen, struct _training 
-                           *tinf, int sctr) {
+                           *tinf, int sctr, char *short_hdr) {
   int i, j;
 
   for(i = 0; i < ng; i++) {
     if(nod[genes[i].start_ndx].strand == 1) {
-      fprintf(fh, ">Prodigal Sequence %d Gene %d # %d # %d # 1\n", sctr, i+1,
-              genes[i].begin, genes[i].end);
+      fprintf(fh, ">%s_%d_%d # %d # %d # 1 # %s\n", short_hdr, sctr, i+1,
+              genes[i].begin, genes[i].end, genes[i].gene_data);
       for(j = genes[i].begin-1; j < genes[i].end; j++) {
         if(is_a(seq, j) == 1) fprintf(fh, "A");
         else if(is_t(seq, j) == 1) fprintf(fh, "T");
@@ -464,8 +479,8 @@ void write_nucleotide_seqs(FILE *fh, struct _gene *genes, int ng, struct
       if((j-genes[i].begin+1)%70 != 0) fprintf(fh, "\n");
     }
     else {
-      fprintf(fh, ">Prodigal Sequence %d Gene %d # %d # %d # -1\n", sctr, i+1,
-              genes[i].begin, genes[i].end);
+      fprintf(fh, ">%s_%d_%d # %d # %d # -1 # %s\n", short_hdr, sctr, i+1,
+              genes[i].begin, genes[i].end, genes[i].gene_data);
       for(j = slen-genes[i].end; j < slen+1-genes[i].begin; j++) {
         if(is_a(rseq, j) == 1) fprintf(fh, "A");
         else if(is_t(rseq, j) == 1) fprintf(fh, "T");

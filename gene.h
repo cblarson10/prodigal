@@ -29,22 +29,26 @@
 #define MAX_GENES 30000
 
 struct _gene {
-  int begin;            /* Left end of the gene */
-  int end;              /* Right end of the gene */
-  int start_ndx;        /* Index to the start node in the nodes file */
-  int stop_ndx;         /* Index to the stop node in the nodes file */
+  int begin;               /* Left end of the gene */
+  int end;                 /* Right end of the gene */
+  int start_ndx;           /* Index to the start node in the nodes file */
+  int stop_ndx;            /* Index to the stop node in the nodes file */
+  char gene_data[500];     /* String containing gene information */
+  char score_data[500];    /* String containing scoring information */
 };
 
 int add_genes(struct _gene *, struct _node *, int);
+void record_gene_data(struct _gene *, int, struct _node *, struct _training *,
+                      int);
 void tweak_final_starts(struct _gene *, int, struct _node *, int, struct
                        _training *);
 
 void print_genes(FILE *, struct _gene *, int, struct _node *, int, int, int,
-                 int, char *, struct _training *tinf, char *, char *);
+                 int, char *, struct _training *, char *, char *, char *);
 void write_translations(FILE *, struct _gene *, int, struct _node *, 
                         unsigned char *, unsigned char *, int, 
-                        struct _training *, int);
+                        struct _training *, int, char *);
 void write_nucleotide_seqs(FILE *, struct _gene *, int, struct _node *, 
                            unsigned char *, unsigned char *, unsigned char *,
-                           int, struct _training *, int);
+                           int, struct _training *, int, char *);
 #endif
