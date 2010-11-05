@@ -25,8 +25,8 @@
 #include "dprog.h"
 #include "gene.h"
 
-#define VERSION "2.00"
-#define DATE "March, 2010"
+#define VERSION "2.01"
+#define DATE "May, 2010"
 
 #define MIN_SINGLE_GENOME 20000
 #define IDEAL_SINGLE_GENOME 100000
@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
   struct _node *nodes;
   struct _gene *genes;
   struct _training tinf;
-  struct _metagenomic_bin meta[30];
+  struct _metagenomic_bin meta[NUM_META];
   mask mlist[MAX_MASKS];
 
   /* Allocate memory and initialize variables */
@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
   memset(nodes, 0, MAX_NODES*sizeof(struct _node));
   memset(genes, 0, MAX_GENES*sizeof(struct _gene));
   memset(&tinf, 0, sizeof(struct _training));
-  for(i = 0; i < 30; i++) {
+  for(i = 0; i < NUM_META; i++) {
     memset(&meta[i], 0, sizeof(struct _metagenomic_bin));
     strcpy(meta[i].desc, "None");
     meta[i].tinf = (struct _training *)malloc(sizeof(struct _training));
@@ -496,7 +496,7 @@ int main(int argc, char *argv[]) {
         Second dynamic programming, using the dicodon statistics as the
         scoring function.                                
       ***********************************************************************/
-      score_nodes(seq, rseq, slen, nodes, nn, &tinf, closed);
+      score_nodes(seq, rseq, slen, nodes, nn, &tinf, closed, is_meta);
       if(start_ptr != stdout) 
         write_start_file(start_ptr, nodes, nn, &tinf, num_seq, slen, 0, NULL,
                          VERSION, cur_header);
@@ -540,7 +540,7 @@ int main(int argc, char *argv[]) {
           qsort(nodes, nn, sizeof(struct _node), &compare_nodes);
         }
         reset_node_scores(nodes, nn);
-        score_nodes(seq, rseq, slen, nodes, nn, meta[i].tinf, closed);
+        score_nodes(seq, rseq, slen, nodes, nn, meta[i].tinf, closed, is_meta);
         record_overlapping_starts(nodes, nn, meta[i].tinf, 1);
         ipath = dprog(nodes, nn, meta[i].tinf, 1);
         if(i == 0 || nodes[ipath].score > max_score) {
@@ -558,7 +558,8 @@ int main(int argc, char *argv[]) {
       nn = add_nodes(seq, rseq, slen, nodes, closed, mlist, nmask,
                        meta[max_phase].tinf);
       qsort(nodes, nn, sizeof(struct _node), &compare_nodes);
-      score_nodes(seq, rseq, slen, nodes, nn, meta[max_phase].tinf, closed);
+      score_nodes(seq, rseq, slen, nodes, nn, meta[max_phase].tinf, closed,
+                  is_meta);
       if(start_ptr != stdout) 
         write_start_file(start_ptr, nodes, nn, meta[max_phase].tinf, 
                          num_seq, slen, 1, meta[max_phase].desc, VERSION,
@@ -603,7 +604,7 @@ int main(int argc, char *argv[]) {
   if(useq != NULL) free(useq);
   if(nodes != NULL) free(nodes);
   if(genes != NULL) free(genes);
-  for(i = 0; i < 30; i++) if(meta[i].tinf != NULL) free(meta[i].tinf);
+  for(i = 0; i < NUM_META; i++) if(meta[i].tinf != NULL) free(meta[i].tinf);
 
   /* Close all the filehandles and exit */
   if(input_ptr != stdin) fclose(input_ptr);

@@ -161,11 +161,12 @@ void tweak_final_starts(struct _gene *genes, int ng, struct _node *nod,
       /* Close starts.  Ignore coding and see if start has better rbs */
       /* and type. */
       else if(abs(nod[mndx].ndx-nod[ndx].ndx) <= 15 && nod[mndx].rscore+
-              nod[mndx].tscore > nod[ndx].rscore+nod[ndx].tscore) {
-        if(nod[ndx].cscore > nod[mndx].cscore) maxsc[j] += nod[ndx].cscore -
-                                               nod[mndx].cscore;
-        if(nod[ndx].uscore > nod[mndx].uscore) maxsc[j] += nod[ndx].uscore - 
-                                               nod[mndx].uscore;
+              nod[mndx].tscore > nod[ndx].rscore+nod[ndx].tscore &&
+              nod[ndx].edge == 0 && nod[mndx].edge == 0) {
+        if(nod[ndx].cscore > nod[mndx].cscore) 
+          maxsc[j] += nod[ndx].cscore - nod[mndx].cscore;
+        if(nod[ndx].uscore > nod[mndx].uscore) 
+          maxsc[j] += nod[ndx].uscore - nod[mndx].uscore;
         if(igm > maxigm[j]) maxsc[j] += igm - maxigm[j]; 
       }
   
@@ -274,8 +275,8 @@ void record_gene_data(struct _gene *genes, int ng, struct _node *nod,
     if(nod[ndx].edge == 1) st_type = 3;
     else st_type = nod[ndx].type;
 
-    sprintf(genes[i].gene_data, "ID=%d_%d;partial=%d%d;type=%s;", sctr, i+1,
-            partial_left, partial_right, type_string[st_type]);
+    sprintf(genes[i].gene_data, "ID=%d_%d;partial=%d%d;start_type=%s;", sctr, 
+            i+1, partial_left, partial_right, type_string[st_type]);
 
     /* Record rbs data */
     rbs1 = tinf->rbs_wt[nod[ndx].rbs[0]]*tinf->st_wt;
@@ -437,7 +438,7 @@ void write_translations(FILE *fh, struct _gene *genes, int ng, struct
     if(nod[genes[i].start_ndx].strand == 1) {
       fprintf(fh, ">%s_%d_%d # %d # %d # 1 # %s\n", short_hdr, sctr, i+1,
               genes[i].begin, genes[i].end, genes[i].gene_data);
-      for(j = genes[i].begin; j < genes[i].end-3; j+=3) {
+      for(j = genes[i].begin; j < genes[i].end; j+=3) {
         fprintf(fh, "%c", amino(seq, j-1, tinf, j==genes[i].begin?1:0 &&
                 (1-nod[genes[i].start_ndx].edge)));
         if((j-genes[i].begin)%180 == 177) fprintf(fh, "\n");
@@ -447,7 +448,7 @@ void write_translations(FILE *fh, struct _gene *genes, int ng, struct
     else {
       fprintf(fh, ">%s_%d_%d # %d # %d # -1 # %s\n", short_hdr, sctr, i+1,
               genes[i].begin, genes[i].end, genes[i].gene_data);
-      for(j = slen+1-genes[i].end; j < slen+1-genes[i].begin-3; j+=3) {
+      for(j = slen+1-genes[i].end; j < slen+1-genes[i].begin; j+=3) {
         fprintf(fh, "%c", amino(rseq, j-1, tinf, j==slen+1-genes[i].end?1:0 &&
                 (1-nod[genes[i].start_ndx].edge)));
         if((j-slen-1+genes[i].end)%180 == 177) fprintf(fh, "\n");

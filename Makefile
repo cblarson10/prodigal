@@ -34,8 +34,8 @@ EXEC=	prodigal
 
 CFLAGS=	-O3 -Wall
 
-LIBS=	-lm
-LDFLAGS=	$(LDIRS) $(LIBS)
+LIBS=	-lm -lRNA
+LDFLAGS=	-L . $(LIBS)
 
 OBJS=	${SRC:.c=.o}
 

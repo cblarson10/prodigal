@@ -18,7 +18,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *******************************************************************************/
 
-README for Version 2.00
+README for Version 2.01
 
 I.  Introduction
 
@@ -29,9 +29,9 @@ Hyatt, with ideas from Loren Hauser, and with further assistance from Frank
 Larimer and Miriam Land.  Gwo-Liang Chen and Philip Locascio also contributed
 to previous microbial genefinding work at ORNL prior to Prodigal.
 
-Reference:  Hyatt D, Chen G, Locasio P, Land M, Larimer F, Hauser L:
+Reference:  Hyatt D, Chen GL, Locascio PF, Land ML, Larimer FW, Hauser LJ. 
             Prodigal: prokaryotic gene recognition and translation initiation
-            site identification.  BMC Bioinformatics 2010 (accepted).
+            site identification. BMC Bioinformatics. 2010 Mar 8;11(1):119.
 
 To install Prodigal on Linux or MacOSX, just type 'make'.  On Windows, you 
 can compile with mingw (http://www.mingw.org/), or you can create a project 

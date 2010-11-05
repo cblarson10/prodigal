@@ -374,7 +374,7 @@ void calc_dicodon_gene(struct _training *tinf, unsigned char *seq, unsigned
 
 void score_nodes(unsigned char *seq, unsigned char *rseq, int slen,
                  struct _node *nod, int nn, struct _training *tinf,
-                 int closed) {
+                 int closed, int is_meta) {
   int i, j;
   double negf, posf, rbs1, rbs2, sd_score, edge_gene;
 
@@ -395,10 +395,11 @@ void score_nodes(unsigned char *seq, unsigned char *rseq, int slen,
     if(nod[i].type == STOP) continue;
  
     /* Does this gene run off the edge? */
-    if(nod[i].edge == 1 || (nod[i].strand == 1 && is_stop(seq, nod[i].stop_val,
+    edge_gene = 0;
+    if(nod[i].edge == 1) edge_gene++;
+    if((nod[i].strand == 1 && is_stop(seq, nod[i].stop_val,
        tinf) == 0) || (nod[i].strand == -1 && is_stop(rseq, slen-1-
-       nod[i].stop_val, tinf) == 0)) edge_gene = 1;
-    else edge_gene = 0;
+       nod[i].stop_val, tinf) == 0)) edge_gene++;
 
     /* Edge Nodes : stops with no starts, give a small bonus */
     if(nod[i].edge == 1) {
@@ -408,32 +409,6 @@ void score_nodes(unsigned char *seq, unsigned char *rseq, int slen,
     }
 
     else {
-
-      /* Upstream Score */
-      if(nod[i].strand == 1) 
-        score_upstream_composition(seq, slen, &nod[i], tinf);
-      else score_upstream_composition(rseq, slen, &nod[i], tinf);
-
-      /****************************************************************
-      ** Penalize upstream score if choosing this start would stop   **
-      ** the gene from running off the edge.                         **
-      ****************************************************************/
-      if(closed == 0 && nod[i].ndx == 0 && nod[i].strand == 1) 
-        nod[i].uscore += EDGE_UPS*tinf->st_wt; 
-      else if(closed == 0 && nod[i].ndx == slen-1 && nod[i].strand == -1)
-        nod[i].uscore += EDGE_UPS*tinf->st_wt; 
-      else if(i < 500 && nod[i].strand == 1) {
-        for(j = i-1; j >= 0; j--)
-          if(nod[j].edge == 1 && nod[i].stop_val == nod[j].stop_val) {
-            nod[i].uscore += EDGE_UPS*tinf->st_wt; break;
-          }
-      }
-      else if(i >= nn-500 && nod[i].strand == -1) {
-        for(j = i+1; j < nn; j++)
-          if(nod[j].edge == 1 && nod[i].stop_val == nod[j].stop_val) {
-            nod[i].uscore += EDGE_UPS*tinf->st_wt; break;
-          }
-      }
 
       /* Type Score */
       nod[i].tscore = tinf->type_wt[nod[i].type] * tinf->st_wt;
@@ -449,25 +424,49 @@ void score_nodes(unsigned char *seq, unsigned char *rseq, int slen,
           nod[i].rscore = sd_score;
       }
 
+      /* Upstream Score */
+      if(nod[i].strand == 1) 
+        score_upstream_composition(seq, slen, &nod[i], tinf);
+      else score_upstream_composition(rseq, slen, &nod[i], tinf);
+
+      /****************************************************************
+      ** Penalize upstream score if choosing this start would stop   **
+      ** the gene from running off the edge.                         **
+      ****************************************************************/
+      if(closed == 0 && nod[i].ndx <= 2 && nod[i].strand == 1) 
+        nod[i].uscore += EDGE_UPS*tinf->st_wt; 
+      else if(closed == 0 && nod[i].ndx >= slen-3 && nod[i].strand == -1)
+        nod[i].uscore += EDGE_UPS*tinf->st_wt; 
+      else if(i < 500 && nod[i].strand == 1) {
+        for(j = i-1; j >= 0; j--)
+          if(nod[j].edge == 1 && nod[i].stop_val == nod[j].stop_val) {
+            nod[i].uscore += EDGE_UPS*tinf->st_wt; 
+            break;
+          }
+      }
+      else if(i >= nn-500 && nod[i].strand == -1) {
+        for(j = i+1; j < nn; j++)
+          if(nod[j].edge == 1 && nod[i].stop_val == nod[j].stop_val) {
+            nod[i].uscore += EDGE_UPS*tinf->st_wt; 
+            break;
+          }
+      }
+
     }
 
-    /* Convert starts at base 1 and slen to edge genes if that */
-    /* would improve their score. */
-    if(((nod[i].ndx == 0 && nod[i].strand == 1) || (nod[i].ndx == slen-1 &&
-       nod[i].strand == -1)) && nod[i].edge == 0 && nod[i].rscore + 
-       nod[i].tscore + nod[i].uscore < EDGE_BONUS*tinf->st_wt && closed == 0) {
+    /* Convert starts at base 1 and slen to edge genes if closed = 0 */
+    if(((nod[i].ndx <= 2 && nod[i].strand == 1) || (nod[i].ndx >= slen-3 &&
+       nod[i].strand == -1)) && nod[i].edge == 0 && closed == 0) {
       nod[i].edge = 1;
       nod[i].tscore = 0.0;
       nod[i].uscore = EDGE_BONUS*tinf->st_wt;
       nod[i].rscore = 0.0;
     }
 
-    /* Penalize genes < 250bp, edge genes < 125bp */
-    if(abs(nod[i].ndx-nod[i].stop_val) < (250 - 125*edge_gene)) {
-      negf = (250.0-125.0*edge_gene)/
-             (float)abs(nod[i].ndx-nod[i].stop_val);
-      posf = (float)abs(nod[i].ndx-nod[i].stop_val)/
-             (250.0-125.0*edge_gene);
+    /* Penalize non-edge genes < 250bp */
+    if(edge_gene == 0 && abs(nod[i].ndx-nod[i].stop_val) < 250) {
+      negf = 250.0/(float)abs(nod[i].ndx-nod[i].stop_val);
+      posf = (float)abs(nod[i].ndx-nod[i].stop_val)/250.0;
       if(nod[i].rscore < 0) nod[i].rscore *= negf; 
       if(nod[i].uscore < 0) nod[i].uscore *= negf; 
       if(nod[i].tscore < 0) nod[i].tscore *= negf; 
@@ -478,8 +477,20 @@ void score_nodes(unsigned char *seq, unsigned char *rseq, int slen,
 
     /* Base Start Score */
     nod[i].sscore = nod[i].tscore + nod[i].rscore + nod[i].uscore;
-    if(nod[i].cscore < 0) nod[i].sscore -= 0.5;
 
+    /**************************************************************/
+    /* Penalize starts if coding is negative.  Larger penalty for */
+    /* metagenomic fragments, since access to both SD and non-SD  */
+    /* bins can inflate start scores.  We also penalize small     */
+    /* metagenomic sequences, since start information can be      */
+    /* unreliable.                                                */
+    /**************************************************************/
+    if(nod[i].cscore < 0) nod[i].sscore -= 0.5;
+    if(nod[i].edge == 0 && is_meta == 1 && slen < 3000) {
+      nod[i].sscore -= (((3000-slen)/3000.0)*0.5*tinf->st_wt);
+      if(nod[i].cscore < 0) 
+        nod[i].sscore -= (((3000-slen)/3000.0)*tinf->st_wt);
+    }
   }
 }
 
@@ -1099,6 +1110,7 @@ void score_upstream_composition(unsigned char *seq, int slen, struct _node *nod,
   nod->uscore = 0.0;
   for(i = 1; i < 45; i++) {
     if(i > 2 && i < 15) continue;
+    if(start-i < 0) continue;
     nod->uscore += 0.4*tinf->st_wt*
                    tinf->ups_comp[count][mer_ndx(1, seq, start-i)];
     count++;
