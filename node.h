@@ -32,8 +32,8 @@
 #define MAX_SAM_OVLP 60
 #define ST_WINDOW 60
 #define OPER_DIST 60
-#define EDGE_BONUS 0.53
-#define EDGE_UPS -1.20
+#define EDGE_BONUS 0.73
+#define EDGE_UPS -1.00
 
 struct _motif {
   int ndx;             /* Index of the best motif for this node */

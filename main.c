@@ -25,8 +25,8 @@
 #include "dprog.h"
 #include "gene.h"
 
-#define VERSION "2.01"
-#define DATE "May, 2010"
+#define VERSION "2.50"
+#define DATE "November, 2010"
 
 #define MIN_SINGLE_GENOME 20000
 #define IDEAL_SINGLE_GENOME 100000

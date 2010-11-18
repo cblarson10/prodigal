@@ -1,10 +1,19 @@
-VERSION 2.01
+VERSION 2.50
 
-* Fixed a problem with genes being truncated early in small contigs when
-they should run off the edge.
-* Reduced the number of metagenomic bins from 8 to 4, which halves the
+* In GFF output, changed "type=ATG" to "start_type=ATG" to fix a bug where
+BioPerl's GFF parser couldn't parse the Prodigal GFF output due to a conflict
+with this tag.
+* Fixed a problem with genes being truncated early in small contigs when they
+should run off the edges.
+* Fixed a problem with multiple overlapping genes running off edges.
+* Reduced the number of metagenomic bins from 8 to 6, which reduces the
 running time of the metagenomic program.  This was found not to lose any
 significant accuracy.
+* Redid the metagenomic clustering using a different methodology and wound up
+with 39 training files instead of 30.
+* Added rules to increase sensitivity in draft/metagenomic fragments.
+* Added rules to reduce false positives of negative coding genes in metagenomic
+fragments.
 
 VERSION 2.00
 

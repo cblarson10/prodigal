@@ -212,7 +212,7 @@ double score_sample(unsigned char *seq, unsigned char *rseq, int slen, int
   from best fit to worst fit.
 *******************************************************************************/
 void determine_top_bins(unsigned char *seq, unsigned char *rseq, int slen,
-                       double gc, struct _metagenomic_bin *meta) {
+                        double gc, struct _metagenomic_bin *meta) {
   int i, j;
   double nsamp = 0.0, rnd = 0.0;
 
@@ -227,9 +227,10 @@ void determine_top_bins(unsigned char *seq, unsigned char *rseq, int slen,
   nsamp = ((double)slen/SAMPLE_LEN);
   if(nsamp < MAX_SAMPLE) {
     for(i = 0; i < nsamp; i++) 
-      for(j = 0; j < NUM_META; j++) 
+      for(j = 0; j < NUM_META; j++) {
         meta[j].weight += dmax(0.0, score_sample(seq, rseq, slen, i*SAMPLE_LEN,
                               (i+1)*SAMPLE_LEN-1, meta[j].tinf)); 
+      }
   }
   else {
     for(i = 0; i < MAX_SAMPLE; i++) {
@@ -241,27 +242,7 @@ void determine_top_bins(unsigned char *seq, unsigned char *rseq, int slen,
     }
   }
 
-  qsort(meta, NUM_META, sizeof(struct _metagenomic_bin), &compare_meta_bins); 
-
-  if(meta[0].weight == 0) {
-    nsamp = ((double)slen/SMALL_SAMPLE);
-    if(nsamp < MAX_SAMPLE) {
-      for(i = 0; i < nsamp; i++) 
-        for(j = 0; j < NUM_META; j++) 
-          meta[j].weight += dmax(0.0, score_sample(seq, rseq, slen, 
-                                 i*SMALL_SAMPLE, (i+1)*SMALL_SAMPLE-1, 
-                                 meta[j].tinf)); 
-    }
-    else {
-      for(i = 0; i < MAX_SAMPLE; i++) {
-        rnd = (int)(((double)rand())/((double)RAND_MAX)*(slen-SMALL_SAMPLE-1));
-        for(j = 0; j < NUM_META; j++) {
-          meta[j].weight += dmax(0.0, score_sample(seq, rseq, slen, rnd, 
-                                 rnd+SMALL_SAMPLE-1, meta[j].tinf));
-        }
-      }
-    }
-  }
+  qsort(meta, NUM_META, sizeof(struct _metagenomic_bin), &compare_meta_bins);
 }
 
 /* Sorting routine for metagenomic bins */

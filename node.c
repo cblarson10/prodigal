@@ -212,7 +212,7 @@ void record_overlapping_starts(struct _node *nod, int nn, struct _training
 
   for(i = 0; i < nn; i++) {
     for(j = 0; j < 3; j++) nod[i].star_ptr[j] = -1;
-    if(nod[i].type != STOP) continue;
+    if(nod[i].type != STOP || nod[i].edge == 1) continue;
     if(nod[i].strand == 1) {
       max_sc = -100;
       for(j = i+3; j >= 0; j--) {
@@ -481,15 +481,12 @@ void score_nodes(unsigned char *seq, unsigned char *rseq, int slen,
     /**************************************************************/
     /* Penalize starts if coding is negative.  Larger penalty for */
     /* metagenomic fragments, since access to both SD and non-SD  */
-    /* bins can inflate start scores.  We also penalize small     */
-    /* metagenomic sequences, since start information can be      */
-    /* unreliable.                                                */
+    /* bins can inflate start scores.                             */
     /**************************************************************/
-    if(nod[i].cscore < 0) nod[i].sscore -= 0.5;
-    if(nod[i].edge == 0 && is_meta == 1 && slen < 3000) {
-      nod[i].sscore -= (((3000-slen)/3000.0)*0.5*tinf->st_wt);
-      if(nod[i].cscore < 0) 
-        nod[i].sscore -= (((3000-slen)/3000.0)*tinf->st_wt);
+    if(nod[i].cscore < 0) {
+      if(nod[i].edge == 0 && is_meta == 1 && slen < 3000)
+        nod[i].sscore -= (((3000-slen)/3000.0)*1.5*tinf->st_wt);
+      else nod[i].sscore -= 0.5;
     }
   }
 }

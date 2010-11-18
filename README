@@ -18,26 +18,32 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *******************************************************************************/
 
-README for Version 2.01
+README for Version 2.5
 
 I.  Introduction
 
 Prodigal (PROkaryotic DynamIc programming Genefinding ALgorithm) is an open
 source lightweight microbial genefinding program developed at University of
-Tennessee and Oak Ridge National Laboratory.  The code was written by Doug
-Hyatt, with ideas from Loren Hauser, and with further assistance from Frank
-Larimer and Miriam Land.  Gwo-Liang Chen and Philip Locascio also contributed
-to previous microbial genefinding work at ORNL prior to Prodigal.
+Tennessee and Oak Ridge National Laboratory.  
+
+The code was written by Doug Hyatt, with ideas from Loren Hauser, and with
+further assistance from Frank Larimer and Miriam Land.  Gwo-Liang Chen and 
+Philip Locascio also contributed to previous microbial genefinding work at ORNL 
+prior to Prodigal.
 
 Reference:  Hyatt D, Chen GL, Locascio PF, Land ML, Larimer FW, Hauser LJ. 
             Prodigal: prokaryotic gene recognition and translation initiation
             site identification. BMC Bioinformatics. 2010 Mar 8;11(1):119.
 
+The metagenomic/draft code was written by Doug Hyatt, with ideas from Loren
+Hauser and Edward C. Uberbacher.  The metagenomic publication is currently in
+progress.
+
 To install Prodigal on Linux or MacOSX, just type 'make'.  On Windows, you 
 can compile with mingw (http://www.mingw.org/), or you can create a project 
 from existing code in MSVC (compile as a console application).  We found the
 mingw version to work better.  Note that compilation may take a minute or two
-due to the addition of 15MB of precalculated training file data to the main
+due to the addition of 20MB of precalculated training file data to the main
 program.
 
 Do 'prodigal -h' to get a list of options, i.e.:
