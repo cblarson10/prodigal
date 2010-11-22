@@ -30,7 +30,7 @@
 
 #define NUM_BIN 6
 #define NUM_META 39
-#define SAMPLE_LEN 60
+#define SAMPLE_LEN 90
 #define MAX_SAMPLE 200
 
 struct _metagenomic_bin {

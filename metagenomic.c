@@ -195,11 +195,11 @@ double score_sample(unsigned char *seq, unsigned char *rseq, int slen, int
  
   for(i = 0; i < 3; i++) {
     cur = 0.0;
-    for(j = begin+i; j <= end-5 && j <= slen-5; j+=3)
+    for(j = begin+i; j <= end-5 && j <= slen-5; j+=6)
       cur += tinf->gene_dc[mer_ndx(6, seq, j)];
     if(cur > max) max = cur; 
     cur = 0.0;
-    for(j = begin+i; j <= end-5 && j <= slen-5; j+=3)
+    for(j = begin+i; j <= end-5 && j <= slen-5; j+=6)
       cur += tinf->gene_dc[mer_ndx(6, rseq, slen-j-6)];
     if(cur > max) max = cur; 
   } 
@@ -222,15 +222,20 @@ void determine_top_bins(unsigned char *seq, unsigned char *rseq, int slen,
     meta[i].index = i;
     meta[i].weight = 0.0;
     meta[i].gc = fabs(gc - meta[i].tinf->gc);
+    meta[i].weight += dmax(0.0, score_sample(seq, rseq, slen, 0, 59, 
+                           meta[i].tinf));
+    meta[i].weight += dmax(0.0, score_sample(seq, rseq, slen, slen-60, slen-1, 
+                           meta[i].tinf));
   }
 
   nsamp = ((double)slen/SAMPLE_LEN);
   if(nsamp < MAX_SAMPLE) {
-    for(i = 0; i < nsamp; i++) 
+    for(i = 0; i < nsamp; i++) {
       for(j = 0; j < NUM_META; j++) {
         meta[j].weight += dmax(0.0, score_sample(seq, rseq, slen, i*SAMPLE_LEN,
-                              (i+1)*SAMPLE_LEN-1, meta[j].tinf)); 
+                               (i+1)*SAMPLE_LEN-1, meta[j].tinf)); 
       }
+    }
   }
   else {
     for(i = 0; i < MAX_SAMPLE; i++) {
