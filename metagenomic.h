@@ -1,6 +1,6 @@
 /*******************************************************************************
     PRODIGAL (PROkaryotic DynamIc Programming Genefinding ALgorithm)
-    Copyright (C) 2007-2010 University of Tennessee / UT-Battelle
+    Copyright (C) 2007-2011 University of Tennessee / UT-Battelle
 
     Code Author:  Doug Hyatt
 
@@ -29,12 +29,13 @@
 #include "node.h"
 
 #define NUM_BIN 6
-#define NUM_META 39
-#define SAMPLE_LEN 90
+#define NUM_META 50
+#define SAMPLE_LEN 120
 #define MAX_SAMPLE 200
 
 struct _metagenomic_bin {
   int index;                    /* Index used for sorting */
+  int clusnum;                  /* Cluster number */
   char desc[500];               /* Text description of this bin */
   double weight;                /* Current weight/score of this bin */
   double gc;                    /* GC distance from target sequence */
@@ -42,10 +43,12 @@ struct _metagenomic_bin {
 };
 
 void initialize_metagenomic_bins(struct _metagenomic_bin *);
+double score_edges(unsigned char *, unsigned char *, int, 
+                   struct _training *tinf);
 double score_sample(unsigned char *, unsigned char *, int, int, int, struct
                     _training *tinf);
-void determine_top_bins(unsigned char *, unsigned char *, int, double, struct 
-                        _metagenomic_bin *);
+void determine_top_bins(unsigned char *, unsigned char *, int, double,
+                        struct _metagenomic_bin *);
 int compare_meta_bins(const void *, const void *);
 
 #endif

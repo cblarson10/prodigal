@@ -1,6 +1,6 @@
 /*******************************************************************************
     PRODIGAL (PROkaryotic DynamIc Programming Genefinding ALgorithm)
-    Copyright (C) 2007-2010 University of Tennessee / UT-Battelle
+    Copyright (C) 2007-2011 University of Tennessee / UT-Battelle
 
     Code Author:  Doug Hyatt
 
@@ -26,14 +26,15 @@
 #include "sequence.h"
 #include "training.h"
 
-#define MAX_NODES 2000000
+#define STT_NOD 100000
 #define MIN_GENE 90
 #define MIN_EDGE_GENE 60
 #define MAX_SAM_OVLP 60
 #define ST_WINDOW 60
 #define OPER_DIST 60
-#define EDGE_BONUS 0.73
+#define EDGE_BONUS 0.74
 #define EDGE_UPS -1.00
+#define META_PEN 7.5
 
 struct _motif {
   int ndx;             /* Index of the best motif for this node */
@@ -55,6 +56,7 @@ struct _node {
   int gc_bias;         /* Frame of highest GC content within this node */
   double gc_score[3];  /* % GC content in different codon positions */
   double cscore;       /* Coding score for this node (based on 6-mer usage) */
+  double gc_cont;      /* GC Content for the node */
   int rbs[2];          /* SD RBS score for this node (based on binding energy)
                           rbs[0] = best motif with exact match, rbs[1] = with
                           mismatches */
@@ -88,6 +90,8 @@ void score_nodes(unsigned char *, unsigned char *, int, struct _node *, int,
                  struct _training *, int, int);
 void raw_coding_score(unsigned char *, unsigned char *, int, struct _node *,
                       int, struct _training *);
+void calc_orf_gc(unsigned char *, unsigned char *, int, struct _node *, int, 
+                 struct _training *);
 void rbs_score(unsigned char *, unsigned char *, int, struct _node *, int,
                struct _training *);
 void score_upstream_composition(unsigned char *, int, struct _node *, 

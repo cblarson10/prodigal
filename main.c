@@ -1,6 +1,6 @@
 /*******************************************************************************
     PRODIGAL (PROkaryotic DynamIc Programming Genefinding ALgorithm)
-    Copyright (C) 2007-2010 University of Tennessee / UT-Battelle
+    Copyright (C) 2007-2011 University of Tennessee / UT-Battelle
 
     Code Author:  Doug Hyatt
 
@@ -18,6 +18,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *******************************************************************************/
 
+#include <sys/stat.h>
 #include <unistd.h>
 #include "sequence.h"
 #include "metagenomic.h"
@@ -25,8 +26,8 @@
 #include "dprog.h"
 #include "gene.h"
 
-#define VERSION "2.50"
-#define DATE "November, 2010"
+#define VERSION "2.60"
+#define DATE "October, 2011"
 
 #define MIN_SINGLE_GENOME 20000
 #define IDEAL_SINGLE_GENOME 100000
@@ -34,19 +35,20 @@
 void version();
 void usage(char *);
 void help();
-int copy_standard_input_to_file(char *);
+int copy_standard_input_to_file(char *, int);
 
 int main(int argc, char *argv[]) {
 
   int rv, slen, nn, ng, i, ipath, *gc_frame, do_training, output, max_phase;
   int closed, do_mask, nmask, force_nonsd, user_tt, is_meta, num_seq, quiet;
-  int piped;
-  double max_score, gc;
+  int piped, max_slen, fnum;
+  double max_score, gc, low, high;
   unsigned char *seq, *rseq, *useq;
   char *train_file, *start_file, *trans_file, *nuc_file; 
   char *input_file, *output_file, input_copy[MAX_LINE];
   char cur_header[MAX_LINE], new_header[MAX_LINE], short_header[MAX_LINE];
   FILE *input_ptr, *output_ptr, *start_ptr, *trans_ptr, *nuc_ptr;
+  struct stat fbuf;
   pid_t pid;
   struct _node *nodes;
   struct _gene *genes;
@@ -58,7 +60,7 @@ int main(int argc, char *argv[]) {
   seq = (unsigned char *)malloc(MAX_SEQ/4*sizeof(unsigned char));
   rseq = (unsigned char *)malloc(MAX_SEQ/4*sizeof(unsigned char));
   useq = (unsigned char *)malloc(MAX_SEQ/8*sizeof(unsigned char));
-  nodes = (struct _node *)malloc(MAX_NODES*sizeof(struct _node));
+  nodes = (struct _node *)malloc(STT_NOD*sizeof(struct _node));
   genes = (struct _gene *)malloc(MAX_GENES*sizeof(struct _gene));
   if(seq == NULL || rseq == NULL || nodes == NULL || genes == NULL) {
     fprintf(stderr, "\nError: Malloc failed on sequence/orfs\n\n"); exit(1);
@@ -66,9 +68,10 @@ int main(int argc, char *argv[]) {
   memset(seq, 0, MAX_SEQ/4*sizeof(unsigned char));
   memset(rseq, 0, MAX_SEQ/4*sizeof(unsigned char));
   memset(useq, 0, MAX_SEQ/8*sizeof(unsigned char));
-  memset(nodes, 0, MAX_NODES*sizeof(struct _node));
+  memset(nodes, 0, STT_NOD*sizeof(struct _node));
   memset(genes, 0, MAX_GENES*sizeof(struct _gene));
   memset(&tinf, 0, sizeof(struct _training));
+
   for(i = 0; i < NUM_META; i++) {
     memset(&meta[i], 0, sizeof(struct _metagenomic_bin));
     strcpy(meta[i].desc, "None");
@@ -86,7 +89,7 @@ int main(int argc, char *argv[]) {
   start_file = NULL; trans_file = NULL; nuc_file = NULL;
   start_ptr = stdout; trans_ptr = stdout; nuc_ptr = stdout;
   input_file = NULL; output_file = NULL; piped = 0;
-  input_ptr = stdin; output_ptr = stdout;
+  input_ptr = stdin; output_ptr = stdout; max_slen = 0;
   output = 0; closed = 0; do_mask = 0; force_nonsd = 0;
 
   /* Filename for input copy if needed */
@@ -213,7 +216,6 @@ int main(int argc, char *argv[]) {
       if(user_tt > 0 && user_tt != tinf.trans_table) { 
         fprintf(stderr, "\n\nWarning: user-specified translation table does");
         fprintf(stderr, "not match the one in the specified training file! \n\n");
-        fflush(stderr);
       }
       if(rv == -1) { 
         fprintf(stderr, "\n\nError: training file did not read correctly!\n"); 
@@ -222,27 +224,26 @@ int main(int argc, char *argv[]) {
       if(quiet == 0) {
         fprintf(stderr, "done!\n"); 
         fprintf(stderr, "-------------------------------------\n");
-        fflush(stderr);
       }
     }
   }
 
-  /* If we're dealing with piped input and running in single genome */
-  /* mode with no training file, we copy standard input to a file.  */
-  if(is_meta == 0 && train_file == NULL && input_file == NULL && 
-     fseek(input_ptr, 0, SEEK_SET) == -1) {
-    piped = 1;
-    if(quiet == 0) 
-      fprintf(stderr, "Piped input detected, copying stdin to a tmp file...");
-    if(copy_standard_input_to_file(input_copy) == -1) {
-      fprintf(stderr, "\nError: can't copy stdin to file.\n\n");
-      exit(17);
+  /* Determine where standard input is coming from and react accordingly */
+  if(is_meta == 0 && train_file == NULL && input_file == NULL) {
+    fnum = fileno(stdin);
+    if(fstat(fnum, &fbuf) == -1) {
+      fprintf(stderr, "\nError: can't fstat standard input.\n\n");
+      exit(5);
     }
-    input_file = input_copy;
-    if(quiet == 0) {
-      fprintf(stderr, "done!\n");
-      fprintf(stderr, "-------------------------------------\n");
-      fflush(stderr);
+    if(S_ISCHR(fbuf.st_mode)) help();
+    else if(S_ISREG(fbuf.st_mode)) { /* do nothing */ }
+    else if(S_ISFIFO(fbuf.st_mode)) {
+      piped = 1;
+      if(copy_standard_input_to_file(input_copy, quiet) == -1) {
+        fprintf(stderr, "\nError: can't copy stdin to file.\n\n");
+        exit(5);
+      }
+      input_file = input_copy;
     }
   }
 
@@ -294,7 +295,6 @@ int main(int argc, char *argv[]) {
     if(quiet == 0) {
       fprintf(stderr, "Request:  Single Genome, Phase:  Training\n");
       fprintf(stderr, "Reading in the sequence(s) to train..."); 
-      fflush(stderr);
     }
     slen = read_seq_training(input_ptr, seq, useq, &(tinf.gc), do_mask, mlist,
                              &nmask);
@@ -319,7 +319,6 @@ int main(int argc, char *argv[]) {
     rcom_seq(seq, rseq, useq, slen);
     if(quiet == 0) {
       fprintf(stderr, "%d bp seq created, %.2f pct GC\n", slen, tinf.gc*100.0);
-      fflush(stderr);
     }
 
     /***********************************************************************
@@ -328,13 +327,19 @@ int main(int argc, char *argv[]) {
     ***********************************************************************/
     if(quiet == 0) {
       fprintf(stderr, "Locating all potential starts and stops..."); 
-      fflush(stderr);
+    }
+    if(slen > max_slen) {
+      nodes = (struct _node *)realloc(nodes, (int)(slen/8)*sizeof(struct _node));
+      if(nodes == NULL) {
+        fprintf(stderr, "Realloc failed on nodes\n\n");
+        exit(11);
+      }
+      max_slen = slen;
     }
     nn = add_nodes(seq, rseq, slen, nodes, closed, mlist, nmask, &tinf);
     qsort(nodes, nn, sizeof(struct _node), &compare_nodes);
     if(quiet == 0) {
       fprintf(stderr, "%d nodes\n", nn); 
-      fflush(stderr);
     }
 
     /***********************************************************************
@@ -344,7 +349,6 @@ int main(int argc, char *argv[]) {
     ***********************************************************************/
     if(quiet == 0) {
       fprintf(stderr, "Looking for GC bias in different frames...");
-      fflush(stderr);
     }
     gc_frame = calc_most_gc_frame(seq, slen);
     if(gc_frame == NULL) {
@@ -355,7 +359,6 @@ int main(int argc, char *argv[]) {
     if(quiet == 0) {
       fprintf(stderr, "frame bias scores: %.2f %.2f %.2f\n", tinf.bias[0],
               tinf.bias[1], tinf.bias[2]); 
-      fflush(stderr);
     }
     free(gc_frame);
 
@@ -366,13 +369,11 @@ int main(int argc, char *argv[]) {
     ***********************************************************************/
     if(quiet == 0) {
       fprintf(stderr, "Building initial set of genes to train from...");
-      fflush(stderr);
     }
     record_overlapping_starts(nodes, nn, &tinf, 0);
     ipath = dprog(nodes, nn, &tinf, 0);
     if(quiet == 0) {
       fprintf(stderr, "done!\n"); 
-      fflush(stderr);
     }
 
     /***********************************************************************
@@ -381,13 +382,11 @@ int main(int argc, char *argv[]) {
     ***********************************************************************/
     if(quiet == 0) {
       fprintf(stderr, "Creating coding model and scoring nodes...");
-      fflush(stderr);
     }
     calc_dicodon_gene(&tinf, seq, rseq, slen, nodes, ipath);
     raw_coding_score(seq, rseq, slen, nodes, nn, &tinf);
     if(quiet == 0) {
       fprintf(stderr, "done!\n"); 
-      fflush(stderr);
     }
 
     /***********************************************************************
@@ -396,7 +395,6 @@ int main(int argc, char *argv[]) {
     ***********************************************************************/
     if(quiet == 0) {
       fprintf(stderr, "Examining upstream regions and training starts...");
-      fflush(stderr);
     }
     rbs_score(seq, rseq, slen, nodes, nn, &tinf);
     train_starts_sd(seq, rseq, slen, nodes, nn, &tinf);
@@ -405,14 +403,12 @@ int main(int argc, char *argv[]) {
     if(tinf.uses_sd == 0) train_starts_nonsd(seq, rseq, slen, nodes, nn, &tinf);
     if(quiet == 0) {
       fprintf(stderr, "done!\n"); 
-      fflush(stderr);
     }
 
     /* If training specified, write the training file and exit. */
     if(do_training == 1) {
       if(quiet == 0) {
         fprintf(stderr, "Writing data to training file %s...", train_file);
-        fflush(stderr);
       }
       rv = write_training_file(train_file, &tinf);
       if(rv != 0) { 
@@ -445,13 +441,11 @@ int main(int argc, char *argv[]) {
     if(quiet == 0) {
       fprintf(stderr, "Request:  Metagenomic, Phase:  Training\n");
       fprintf(stderr, "Initializing training files...");
-      fflush(stderr);
     }
     initialize_metagenomic_bins(meta);
     if(quiet == 0) {
       fprintf(stderr, "done!\n");
       fprintf(stderr, "-------------------------------------\n");
-      fflush(stderr);
     }
   }
 
@@ -460,7 +454,6 @@ int main(int argc, char *argv[]) {
     if(is_meta == 1) 
       fprintf(stderr, "Request:  Metagenomic, Phase:  Gene Finding\n");
     else fprintf(stderr, "Request:  Single Genome, Phase:  Gene Finding\n");
-    fflush(stderr);
   }
 
   /* Read and process each sequence in the file in succession */
@@ -477,7 +470,16 @@ int main(int argc, char *argv[]) {
 
     if(quiet == 0) {
       fprintf(stderr, "Finding genes in sequence #%d (%d bp)...", num_seq, slen);
-      fflush(stderr);
+    }
+
+    /* Reallocate memory if this is the biggest sequence we've seen */
+    if(slen > max_slen) {
+      nodes = (struct _node *)realloc(nodes, (int)(slen/8)*sizeof(struct _node));
+      if(nodes == NULL) {
+        fprintf(stderr, "Realloc failed on nodes\n\n");
+        exit(11);
+      }
+      max_slen = slen;
     }
 
     /* Calculate short header for this sequence */
@@ -508,7 +510,6 @@ int main(int argc, char *argv[]) {
       record_gene_data(genes, ng, nodes, &tinf, num_seq);
       if(quiet == 0) {
         fprintf(stderr, "done!\n"); 
-        fflush(stderr);
       }
 
       /* Output the genes */
@@ -516,8 +517,8 @@ int main(int argc, char *argv[]) {
                   &tinf, cur_header, short_header, VERSION);
       fflush(output_ptr);
       if(trans_ptr != stdout)
-        write_translations(trans_ptr, genes, ng, nodes, seq, rseq, slen, &tinf, 
-                           num_seq, short_header);
+        write_translations(trans_ptr, genes, ng, nodes, seq, rseq, useq, slen,
+                              &tinf, num_seq, short_header);
       if(nuc_ptr != stdout)
         write_nucleotide_seqs(nuc_ptr, genes, ng, nodes, seq, rseq, useq, slen,
                               &tinf, num_seq, short_header);
@@ -525,13 +526,13 @@ int main(int argc, char *argv[]) {
 
     else { /* Metagenomic Version */
 
-      determine_top_bins(seq, rseq, slen, tinf.gc, meta);
+      low = 0.88495*gc - 0.0102337;
+      if(low > 0.65) low = 0.65;
+      high = 0.86596*gc + .1131991;
+      if(high < 0.35) high = 0.35;
 
-      /***********************************************************************
-        We do the dynamic programming multiple times on metagenomic fragments,
-        once for each of the top model organisms in our training set.
-      ***********************************************************************/
-      for(i = 0; i < NUM_BIN; i++) {
+      max_score = -100.0;
+      for(i = 0; i < NUM_META; i++) { 
         if(i == 0 || meta[i].tinf->trans_table != 
            meta[i-1].tinf->trans_table) {
           memset(nodes, 0, nn*sizeof(struct _node));
@@ -539,11 +540,13 @@ int main(int argc, char *argv[]) {
                          meta[i].tinf);
           qsort(nodes, nn, sizeof(struct _node), &compare_nodes);
         }
+        if(meta[i].tinf->gc < low || meta[i].tinf->gc > high) continue;  
+        if(meta[i].clusnum > 30) continue; 
         reset_node_scores(nodes, nn);
         score_nodes(seq, rseq, slen, nodes, nn, meta[i].tinf, closed, is_meta);
         record_overlapping_starts(nodes, nn, meta[i].tinf, 1);
         ipath = dprog(nodes, nn, meta[i].tinf, 1);
-        if(i == 0 || nodes[ipath].score > max_score) {
+        if(nodes[ipath].score > max_score) {
           max_phase = i;
           max_score = nodes[ipath].score;
           eliminate_bad_genes(nodes, ipath, meta[i].tinf);
@@ -567,7 +570,6 @@ int main(int argc, char *argv[]) {
 
       if(quiet == 0) {
         fprintf(stderr, "done!\n"); 
-        fflush(stderr);
       }
 
       /* Output the genes */
@@ -576,7 +578,7 @@ int main(int argc, char *argv[]) {
                   short_header, VERSION);
       fflush(output_ptr);
       if(trans_ptr != stdout)
-        write_translations(trans_ptr, genes, ng, nodes, seq, rseq, slen,
+        write_translations(trans_ptr, genes, ng, nodes, seq, rseq, useq, slen,
                            meta[max_phase].tinf, num_seq, short_header);
       if(nuc_ptr != stdout)
         write_nucleotide_seqs(nuc_ptr, genes, ng, nodes, seq, rseq, useq, slen,
@@ -680,12 +682,24 @@ void help() {
 
 /* For piped input, we make a copy of stdin so we can rewind the file. */
 
-int copy_standard_input_to_file(char *path) {
+int copy_standard_input_to_file(char *path, int quiet) {
   char line[MAX_LINE+1];
   FILE *wp;
+
+  if(quiet == 0) {
+    fprintf(stderr, "Piped input detected, copying stdin to a tmp file...");
+  }
+
   wp = fopen(path, "w");
   if(wp == NULL) return -1;
-  while(fgets(line, MAX_LINE, stdin) != NULL) fprintf(wp, "%s", line);
+  while(fgets(line, MAX_LINE, stdin) != NULL) {
+    fprintf(wp, "%s", line);
+  }
   fclose(wp);
+
+  if(quiet == 0) {
+    fprintf(stderr, "done!\n");
+    fprintf(stderr, "-------------------------------------\n");
+  }
   return 0;
 }

@@ -1,6 +1,6 @@
 /*******************************************************************************
     PRODIGAL (PROkaryotic DynamIc Programming Genefinding ALgorithm)
-    Copyright (C) 2007-2010 University of Tennessee / UT-Battelle
+    Copyright (C) 2007-2011 University of Tennessee / UT-Battelle
 
     Code Author:  Doug Hyatt
 
@@ -91,5 +91,16 @@ void initialize_metagenome_35(struct _training *);
 void initialize_metagenome_36(struct _training *);
 void initialize_metagenome_37(struct _training *);
 void initialize_metagenome_38(struct _training *);
+void initialize_metagenome_39(struct _training *);
+void initialize_metagenome_40(struct _training *);
+void initialize_metagenome_41(struct _training *);
+void initialize_metagenome_42(struct _training *);
+void initialize_metagenome_43(struct _training *);
+void initialize_metagenome_44(struct _training *);
+void initialize_metagenome_45(struct _training *);
+void initialize_metagenome_46(struct _training *);
+void initialize_metagenome_47(struct _training *);
+void initialize_metagenome_48(struct _training *);
+void initialize_metagenome_49(struct _training *);
 
 #endif

@@ -1,6 +1,6 @@
 /*******************************************************************************
     PRODIGAL (PROkaryotic DynamIc Programming Genefinding ALgorithm)
-    Copyright (C) 2007-2010 University of Tennessee / UT-Battelle
+    Copyright (C) 2007-2011 University of Tennessee / UT-Battelle
 
     Code Author:  Doug Hyatt
 
@@ -376,9 +376,10 @@ void score_nodes(unsigned char *seq, unsigned char *rseq, int slen,
                  struct _node *nod, int nn, struct _training *tinf,
                  int closed, int is_meta) {
   int i, j;
-  double negf, posf, rbs1, rbs2, sd_score, edge_gene;
+  double negf, posf, rbs1, rbs2, sd_score, edge_gene, min_meta_len;
 
   /* Step 1: Calculate raw coding potential for every start-stop pair. */
+  calc_orf_gc(seq, rseq, slen, nod, nn, tinf);
   raw_coding_score(seq, rseq, slen, nod, nn, tinf);
 
   /* Step 2: Calculate raw RBS Scores for every start node. */
@@ -393,7 +394,7 @@ void score_nodes(unsigned char *seq, unsigned char *rseq, int slen,
   /* Step 3: Score the start nodes */
   for(i = 0; i < nn; i++) {
     if(nod[i].type == STOP) continue;
- 
+
     /* Does this gene run off the edge? */
     edge_gene = 0;
     if(nod[i].edge == 1) edge_gene++;
@@ -403,8 +404,8 @@ void score_nodes(unsigned char *seq, unsigned char *rseq, int slen,
 
     /* Edge Nodes : stops with no starts, give a small bonus */
     if(nod[i].edge == 1) {
-      nod[i].tscore = 0.0;
-      nod[i].uscore = EDGE_BONUS*tinf->st_wt;
+      nod[i].tscore = EDGE_BONUS*tinf->st_wt/edge_gene;
+      nod[i].uscore = 0.0;
       nod[i].rscore = 0.0;
     }
 
@@ -457,11 +458,16 @@ void score_nodes(unsigned char *seq, unsigned char *rseq, int slen,
     /* Convert starts at base 1 and slen to edge genes if closed = 0 */
     if(((nod[i].ndx <= 2 && nod[i].strand == 1) || (nod[i].ndx >= slen-3 &&
        nod[i].strand == -1)) && nod[i].edge == 0 && closed == 0) {
+      edge_gene++;
       nod[i].edge = 1;
       nod[i].tscore = 0.0;
-      nod[i].uscore = EDGE_BONUS*tinf->st_wt;
+      nod[i].uscore = EDGE_BONUS*tinf->st_wt/edge_gene;
       nod[i].rscore = 0.0;
     }
+
+    /* Penalize starts with no stop codon */
+    if(nod[i].edge == 0 && edge_gene == 1) 
+      nod[i].uscore -= 0.5*EDGE_BONUS*tinf->st_wt;
 
     /* Penalize non-edge genes < 250bp */
     if(edge_gene == 0 && abs(nod[i].ndx-nod[i].stop_val) < 250) {
@@ -475,18 +481,82 @@ void score_nodes(unsigned char *seq, unsigned char *rseq, int slen,
       if(nod[i].tscore > 0) nod[i].tscore *= posf; 
     }
 
+    /**************************************************************/
+    /* Coding Penalization in Metagenomic Fragments:  Internal    */
+    /* genes must have a score of 5.0 and be >= 120bp.  High GC   */
+    /* genes are also penalized.                                  */
+    /**************************************************************/
+    if(is_meta == 1 && slen < 3000 && edge_gene == 0 && 
+       (nod[i].cscore < 5.0 || abs(nod[i].ndx-nod[i].stop_val < 120))) {
+      nod[i].cscore -= META_PEN*dmax(0, (3000-slen)/2700.0);
+    }
+ 
     /* Base Start Score */
     nod[i].sscore = nod[i].tscore + nod[i].rscore + nod[i].uscore;
 
     /**************************************************************/
     /* Penalize starts if coding is negative.  Larger penalty for */
-    /* metagenomic fragments, since access to both SD and non-SD  */
-    /* bins can inflate start scores.                             */
+    /* edge genes, since the start is offset by a smaller amount  */
+    /* of coding than normal.                                     */
     /**************************************************************/
-    if(nod[i].cscore < 0) {
-      if(nod[i].edge == 0 && is_meta == 1 && slen < 3000)
-        nod[i].sscore -= (((3000-slen)/3000.0)*1.5*tinf->st_wt);
+    if(nod[i].cscore < 0.0) {
+      if(edge_gene > 0 && nod[i].edge == 0) {
+        if(is_meta == 0 || slen > 1500) nod[i].sscore -= tinf->st_wt;
+        else nod[i].sscore -= (10.31 - 0.004*slen);
+      }
+      else if(is_meta == 1 && slen < 3000 && nod[i].edge == 1) {
+        min_meta_len = sqrt(slen)*5.0;
+        if(abs(nod[i].ndx-nod[i].stop_val) >= min_meta_len) {
+          if(nod[i].cscore >= 0) nod[i].cscore = -1.0;
+          nod[i].sscore = 0.0; 
+          nod[i].uscore = 0.0; 
+        }
+      }
       else nod[i].sscore -= 0.5;
+    }
+    else if(nod[i].cscore < 5.0 && is_meta == 1 && abs(nod[i].ndx-
+            nod[i].stop_val < 120) && nod[i].sscore < 0.0)
+      nod[i].sscore -= tinf->st_wt; 
+  }
+}
+
+/* Calculate the GC Content for each start-stop pair */
+void calc_orf_gc(unsigned char *seq, unsigned char *rseq, int slen, struct
+                 _node *nod, int nn, struct _training *tinf) {
+  int i, j, last[3], fr;
+  double gc[3], gsize = 0.0;
+
+  /* Go through each start-stop pair and calculate the %GC of the gene */
+  for(i = 0; i < 3; i++) gc[i] = 0.0;
+  for(i = nn-1; i >= 0; i--) {
+    fr = (nod[i].ndx)%3;
+    if(nod[i].strand == 1 && nod[i].type == STOP) {
+      last[fr] = nod[i].ndx;
+      gc[fr] = is_gc(seq, nod[i].ndx) + is_gc(seq, nod[i].ndx+1) +
+               is_gc(seq, nod[i].ndx+2);
+    }
+    else if(nod[i].strand == 1) {
+      for(j = last[fr]-3; j >= nod[i].ndx; j-=3)
+        gc[fr] += is_gc(seq, j) + is_gc(seq, j+1) + is_gc(seq, j+2);
+      gsize = (float)(abs(nod[i].stop_val-nod[i].ndx)+3.0);
+      nod[i].gc_cont = gc[fr]/gsize;
+      last[fr] = nod[i].ndx;
+    }
+  }
+  for(i = 0; i < 3; i++) gc[i] = 0.0;
+  for(i = 0; i < nn; i++) {
+    fr = (nod[i].ndx)%3;
+    if(nod[i].strand == -1 && nod[i].type == STOP) {
+      last[fr] = nod[i].ndx;
+      gc[fr] = is_gc(seq, nod[i].ndx) + is_gc(seq, nod[i].ndx-1) +
+               is_gc(seq, nod[i].ndx-2);
+    }
+    else if(nod[i].strand == -1) {
+      for(j = last[fr]+3; j <= nod[i].ndx; j+=3)
+        gc[fr] += is_gc(seq, j) + is_gc(seq, j+1) + is_gc(seq, j+2);
+      gsize = (float)(abs(nod[i].stop_val-nod[i].ndx)+3.0);
+      nod[i].gc_cont = gc[fr]/gsize;
+      last[fr] = nod[i].ndx;
     }
   }
 }
@@ -1421,7 +1491,7 @@ void write_start_file(FILE *fh, struct _node *nod, int nn, struct _training
   fprintf(fh, "# Run Data: %s\n\n", run_data);
 
   fprintf(fh, "Beg\tEnd\tStd\tTotal\tCodPot\tStrtSc\tCodon\tRBSMot\t");
-  fprintf(fh, "Spacer\tRBSScr\tUpsScr\tTypeScr\n");
+  fprintf(fh, "Spacer\tRBSScr\tUpsScr\tTypeScr\tGCCont\n");
   for(i = 0; i < nn; i++) {
     if(nod[i].type == STOP) continue;
     if(nod[i].edge == 1) st_type = 3;
@@ -1470,7 +1540,7 @@ void write_start_file(FILE *fh, struct _node *nod, int nn, struct _training
                      nod[i].rscore);
       }
     }
-    fprintf(fh, "%.2f\t%.2f\n", nod[i].uscore, nod[i].tscore);
+    fprintf(fh, "%.2f\t%.2f\t%.3f\n", nod[i].uscore, nod[i].tscore, nod[i].gc_cont);
   }
   fprintf(fh, "\n");
   qsort(nod, nn, sizeof(struct _node), &compare_nodes);

@@ -1,6 +1,6 @@
 /*******************************************************************************
     PRODIGAL (PROkaryotic DynamIc Programming Genefinding ALgorithm)
-    Copyright (C) 2007-2010 University of Tennessee / UT-Battelle
+    Copyright (C) 2007-2011 University of Tennessee / UT-Battelle
 
     Code Author:  Doug Hyatt
 
@@ -18,7 +18,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *******************************************************************************/
 
-README for Version 2.5
+README for Version 2.60
 
 I.  Introduction
 
@@ -36,15 +36,16 @@ Reference:  Hyatt D, Chen GL, Locascio PF, Land ML, Larimer FW, Hauser LJ.
             site identification. BMC Bioinformatics. 2010 Mar 8;11(1):119.
 
 The metagenomic/draft code was written by Doug Hyatt, with ideas from Loren
-Hauser and Edward C. Uberbacher.  The metagenomic publication is currently in
-progress.
+Hauser and Edward C. Uberbacher.
 
 To install Prodigal on Linux or MacOSX, just type 'make'.  On Windows, you 
-can compile with mingw (http://www.mingw.org/), or you can create a project 
-from existing code in MSVC (compile as a console application).  We found the
-mingw version to work better.  Note that compilation may take a minute or two
-due to the addition of 20MB of precalculated training file data to the main
-program.
+should compile with mingw (http://www.mingw.org/).  Other methods of 
+compilation are not supported on Windows.
+
+Note that compilation may take a few minutes due to the addition of 
+precalculated training file data to the main program.  We did this assuming
+the user would rather have a single executable and not depend on external
+files, but it does mean it takes a bit of time to compile.
 
 Do 'prodigal -h' to get a list of options, i.e.:
 

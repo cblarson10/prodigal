@@ -1,6 +1,6 @@
 /*******************************************************************************
     PRODIGAL (PROkaryotic DynamIc Programming Genefinding ALgorithm)
-    Copyright (C) 2007-2010 University of Tennessee / UT-Battelle
+    Copyright (C) 2007-2011 University of Tennessee / UT-Battelle
 
     Code Author:  Doug Hyatt
 
@@ -64,6 +64,8 @@ int is_start(unsigned char *, int, struct _training *);
 int is_atg(unsigned char *, int);
 int is_gtg(unsigned char *, int);
 int is_ttg(unsigned char *, int);
+
+double gc_content(unsigned char *, int, int);
 
 char amino(unsigned char *, int, struct _training *, int);
 int amino_num(char);

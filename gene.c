@@ -1,6 +1,6 @@
 /*******************************************************************************
     PRODIGAL (PROkaryotic DynamIc Programming Genefinding ALgorithm)
-    Copyright (C) 2007-2010 University of Tennessee / UT-Battelle
+    Copyright (C) 2007-2011 University of Tennessee / UT-Battelle
 
     Code Author:  Doug Hyatt
 
@@ -197,7 +197,7 @@ void record_gene_data(struct _gene *genes, int ng, struct _node *nod,
                       struct _training *tinf, int sctr) {
 
   int i, ndx, sndx, partial_left, partial_right, st_type;
-  double rbs1, rbs2;
+  double rbs1, rbs2, confidence;
   char sd_string[28][100], sd_spacer[28][20], qt[10];
   char type_string[4][5] = { "ATG", "GTG", "TTG" , "Edge" };
 
@@ -309,14 +309,18 @@ void record_gene_data(struct _gene *genes, int ng, struct _node *nod,
       else sprintf(genes[i].gene_data, "%srbs_motif=%s;rbs_spacer=%dbp", 
                    genes[i].gene_data, qt, nod[ndx].mot.spacer);
     }
+    sprintf(genes[i].gene_data, "%s;gc_cont=%.3f", genes[i].gene_data, 
+            nod[ndx].gc_cont);
 
     /* Record score data */
-    sprintf(genes[i].score_data, "score=%.2f;", nod[ndx].cscore + 
-            nod[ndx].sscore);
+    confidence = calculate_confidence(nod[ndx].cscore + nod[ndx].sscore, 
+                                      tinf->st_wt);
     sprintf(genes[i].score_data, 
-     "score=%.2f;cscore=%.2f;sscore=%.2f;rscore=%.2f;uscore=%.2f;tscore=%.2f",
-     nod[ndx].cscore+nod[ndx].sscore,nod[ndx].cscore, nod[ndx].sscore, 
-     nod[ndx].rscore, nod[ndx].uscore, nod[ndx].tscore);
+     "conf=%.2f;score=%.2f;cscore=%.2f;sscore=%.2f;rscore=%.2f;uscore=%.2f;",
+     confidence, nod[ndx].cscore+nod[ndx].sscore,nod[ndx].cscore, 
+     nod[ndx].sscore, nod[ndx].rscore, nod[ndx].uscore);
+    sprintf(genes[i].score_data, "%stscore=%.2f;", genes[i].score_data, 
+            nod[ndx].tscore);
   }
 
 }
@@ -430,27 +434,32 @@ void print_genes(FILE *fp, struct _gene *genes, int ng, struct _node *nod,
 /* Print the gene translations */
 void write_translations(FILE *fh, struct _gene *genes, int ng, struct 
                         _node *nod, unsigned char *seq, unsigned char *rseq, 
-                        int slen, struct _training *tinf, int sctr,
-                        char *short_hdr) {
+                        unsigned char *useq, int slen, struct _training *tinf,
+                        int sctr, char *short_hdr) {
   int i, j;
 
   for(i = 0; i < ng; i++) {
     if(nod[genes[i].start_ndx].strand == 1) {
-      fprintf(fh, ">%s_%d_%d # %d # %d # 1 # %s\n", short_hdr, sctr, i+1,
+      fprintf(fh, ">%s # %d # %d # 1 # %s\n", short_hdr,
               genes[i].begin, genes[i].end, genes[i].gene_data);
       for(j = genes[i].begin; j < genes[i].end; j+=3) {
-        fprintf(fh, "%c", amino(seq, j-1, tinf, j==genes[i].begin?1:0 &&
-                (1-nod[genes[i].start_ndx].edge)));
+        if(is_n(useq, j-1) == 1 || is_n(useq, j) == 1 || is_n(useq, j+1) == 1) 
+          fprintf(fh, "X");
+        else fprintf(fh, "%c", amino(seq, j-1, tinf, j==genes[i].begin?1:0 &&
+                     (1-nod[genes[i].start_ndx].edge)));
         if((j-genes[i].begin)%180 == 177) fprintf(fh, "\n");
       }
       if((j-genes[i].begin)%180 != 0) fprintf(fh, "\n");
     }
     else {
-      fprintf(fh, ">%s_%d_%d # %d # %d # -1 # %s\n", short_hdr, sctr, i+1,
+      fprintf(fh, ">%s # %d # %d # -1 # %s\n", short_hdr,
               genes[i].begin, genes[i].end, genes[i].gene_data);
       for(j = slen+1-genes[i].end; j < slen+1-genes[i].begin; j+=3) {
-        fprintf(fh, "%c", amino(rseq, j-1, tinf, j==slen+1-genes[i].end?1:0 &&
-                (1-nod[genes[i].start_ndx].edge)));
+        if(is_n(useq, slen-j) == 1 || is_n(useq, slen-1-j) == 1 ||
+           is_n(useq, slen-2-j) == 1)
+          fprintf(fh, "X");
+        else fprintf(fh, "%c", amino(rseq, j-1, tinf, j==slen+1-genes[i].end?1:0
+                     && (1-nod[genes[i].start_ndx].edge)));
         if((j-slen-1+genes[i].end)%180 == 177) fprintf(fh, "\n");
       }
       if((j-slen-1+genes[i].end)%180 != 0) fprintf(fh, "\n");
@@ -467,7 +476,7 @@ void write_nucleotide_seqs(FILE *fh, struct _gene *genes, int ng, struct
 
   for(i = 0; i < ng; i++) {
     if(nod[genes[i].start_ndx].strand == 1) {
-      fprintf(fh, ">%s_%d_%d # %d # %d # 1 # %s\n", short_hdr, sctr, i+1,
+      fprintf(fh, ">%s # %d # %d # 1 # %s\n", short_hdr,
               genes[i].begin, genes[i].end, genes[i].gene_data);
       for(j = genes[i].begin-1; j < genes[i].end; j++) {
         if(is_a(seq, j) == 1) fprintf(fh, "A");
@@ -480,7 +489,7 @@ void write_nucleotide_seqs(FILE *fh, struct _gene *genes, int ng, struct
       if((j-genes[i].begin+1)%70 != 0) fprintf(fh, "\n");
     }
     else {
-      fprintf(fh, ">%s_%d_%d # %d # %d # -1 # %s\n", short_hdr, sctr, i+1,
+      fprintf(fh, ">%s # %d # %d # -1 # %s\n", short_hdr,
               genes[i].begin, genes[i].end, genes[i].gene_data);
       for(j = slen-genes[i].end; j < slen+1-genes[i].begin; j++) {
         if(is_a(rseq, j) == 1) fprintf(fh, "A");
@@ -494,4 +503,17 @@ void write_nucleotide_seqs(FILE *fh, struct _gene *genes, int ng, struct
       if((j-slen+genes[i].end)%70 != 0) fprintf(fh, "\n");
     }
   }
+}
+
+/* Convert score to a percent confidence */
+double calculate_confidence(double score, double start_weight) {
+  double conf;
+
+  if(score/start_weight < 41) {
+    conf = exp(score/start_weight);
+    conf = (conf/(conf+1))*100.0;
+  }
+  else conf = 99.99;
+  if(conf <= 50.00) { conf = 50.00; }
+  return conf;
 }

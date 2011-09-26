@@ -1,6 +1,6 @@
 /*******************************************************************************
     PRODIGAL (PROkaryotic DynamIc Programming Genefinding ALgorithm)
-    Copyright (C) 2007-2010 University of Tennessee / UT-Battelle
+    Copyright (C) 2007-2011 University of Tennessee / UT-Battelle
 
     Code Author:  Doug Hyatt
 
@@ -222,22 +222,20 @@ int next_seq_multi(FILE *fp, unsigned char *seq, unsigned char *useq,
   return len;
 }
 
-/* Fills in the first valid word of a GFF header */
+/* Takes first word of header */
 void calc_short_header(char *header, char *short_header, int sctr) {
-  int size;
-  char accept[500];
+  int i;
 
-  /* Valid GFF characters for first word of header */
-  strcpy(accept, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
-  strcat(accept, "0123456789.:^*$@!+_?-|");
-
-  /* Calculate short version of header */
-  size = (int)strspn(header, accept);
-  if(size > 3 && size < 100) {
-    strncpy(short_header, header, size);
-    short_header[size] = '\0';
+  strcpy(short_header, header);
+  for(i = 0; i < strlen(header); i++) {
+    if(header[i] == ' ' || header[i] == '\t' || header[i] == '\r' ||
+       header[i] == '\n') {
+      strncpy(short_header, header, i);
+      short_header[i] = '\0';
+      break;
+    }
   }
-  else sprintf(short_header, "Prodigal_Seq_%d", sctr);
+  if(i == 0) { sprintf(short_header, "Prodigal_Seq_%d", sctr); }
 }
 
 /* Takes rseq and fills it up with the rev complement of seq */
@@ -375,6 +373,16 @@ int is_gc(unsigned char *seq, int n) {
   int ndx = n*2;
   if(test(seq, ndx) != test(seq, ndx+1)) return 1;
   return 0;
+}
+
+double gc_content(unsigned char *seq, int a, int b) {
+  double sum = 0.0, gc = 0.0;
+  int i;
+  for(i = a; i <= b; i++) {
+    if(is_g(seq, i) == 1 || is_c(seq, i) == 1) gc++;
+    sum++;
+  }
+  return gc/sum;
 }
 
 /* Returns a single amino acid for this position */
