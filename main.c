@@ -328,7 +328,7 @@ int main(int argc, char *argv[]) {
     if(quiet == 0) {
       fprintf(stderr, "Locating all potential starts and stops..."); 
     }
-    if(slen > max_slen) {
+    if(slen > max_slen && slen > STT_NOD*8) {
       nodes = (struct _node *)realloc(nodes, (int)(slen/8)*sizeof(struct _node));
       if(nodes == NULL) {
         fprintf(stderr, "Realloc failed on nodes\n\n");
@@ -473,7 +473,7 @@ int main(int argc, char *argv[]) {
     }
 
     /* Reallocate memory if this is the biggest sequence we've seen */
-    if(slen > max_slen) {
+    if(slen > max_slen && slen > STT_NOD*8) {
       nodes = (struct _node *)realloc(nodes, (int)(slen/8)*sizeof(struct _node));
       if(nodes == NULL) {
         fprintf(stderr, "Realloc failed on nodes\n\n");
@@ -541,7 +541,6 @@ int main(int argc, char *argv[]) {
           qsort(nodes, nn, sizeof(struct _node), &compare_nodes);
         }
         if(meta[i].tinf->gc < low || meta[i].tinf->gc > high) continue;  
-        if(meta[i].clusnum > 30) continue; 
         reset_node_scores(nodes, nn);
         score_nodes(seq, rseq, slen, nodes, nn, meta[i].tinf, closed, is_meta);
         record_overlapping_starts(nodes, nn, meta[i].tinf, 1);
