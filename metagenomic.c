@@ -20,7 +20,6 @@
 
 #include "metagenomic.h"
 
-
 /*******************************************************************************
   Initialize the metagenomic bins with the precalculated training files
   from the model organisms that best represent all of microbial Genbank.  
@@ -87,7 +86,7 @@ void initialize_metagenomic_bins(struct _metagenomic_bin *meta) {
           "B", 31.08, meta[2].tinf->trans_table, meta[2].tinf->uses_sd);
   sprintf(meta[3].desc, "%d|%s|%s|%.1f|%d|%d", 3,
           "Aeropyrum_pernix_K1",
-          "B", 56.31, meta[3].tinf->trans_table, meta[3].tinf->uses_sd);
+          "A", 56.31, meta[3].tinf->trans_table, meta[3].tinf->uses_sd);
   sprintf(meta[4].desc, "%d|%s|%s|%.1f|%d|%d", 4,
           "Akkermansia_muciniphila_ATCC_BAA_835",
           "B", 55.76, meta[4].tinf->trans_table, meta[4].tinf->uses_sd);
@@ -99,7 +98,7 @@ void initialize_metagenomic_bins(struct _metagenomic_bin *meta) {
           "B", 41.64, meta[6].tinf->trans_table, meta[6].tinf->uses_sd);
   sprintf(meta[7].desc, "%d|%s|%s|%.1f|%d|%d", 7,
           "Archaeoglobus_fulgidus_DSM_4304",
-          "B", 48.58, meta[7].tinf->trans_table, meta[7].tinf->uses_sd);
+          "A", 48.58, meta[7].tinf->trans_table, meta[7].tinf->uses_sd);
   sprintf(meta[8].desc, "%d|%s|%s|%.1f|%d|%d", 8,
           "Bacteroides_fragilis_NCTC_9343",
           "B", 43.19, meta[8].tinf->trans_table, meta[8].tinf->uses_sd);
@@ -114,13 +113,13 @@ void initialize_metagenomic_bins(struct _metagenomic_bin *meta) {
           "B", 35.05, meta[11].tinf->trans_table, meta[11].tinf->uses_sd);
   sprintf(meta[12].desc, "%d|%s|%s|%.1f|%d|%d", 12,
           "Candidatus_Korarchaeum_cryptofilum_OPF8",
-          "B", 49.00, meta[12].tinf->trans_table, meta[12].tinf->uses_sd);
+          "A", 49.00, meta[12].tinf->trans_table, meta[12].tinf->uses_sd);
   sprintf(meta[13].desc, "%d|%s|%s|%.1f|%d|%d", 13,
           "Catenulispora_acidiphila_DSM_44928",
           "B", 69.77, meta[13].tinf->trans_table, meta[13].tinf->uses_sd);
   sprintf(meta[14].desc, "%d|%s|%s|%.1f|%d|%d", 14,
           "Cenarchaeum_symbiosum_B",
-          "B", 57.19, meta[14].tinf->trans_table, meta[14].tinf->uses_sd);
+          "A", 57.19, meta[14].tinf->trans_table, meta[14].tinf->uses_sd);
   sprintf(meta[15].desc, "%d|%s|%s|%.1f|%d|%d", 15,
           "Chlorobium_phaeobacteroides_BS1",
           "B", 48.93, meta[15].tinf->trans_table, meta[15].tinf->uses_sd);
@@ -141,25 +140,25 @@ void initialize_metagenomic_bins(struct _metagenomic_bin *meta) {
           "B", 50.72, meta[20].tinf->trans_table, meta[20].tinf->uses_sd);
   sprintf(meta[21].desc, "%d|%s|%s|%.1f|%d|%d", 21,
           "Haloquadratum_walsbyi_DSM_16790",
-          "B", 47.86, meta[21].tinf->trans_table, meta[21].tinf->uses_sd);
+          "A", 47.86, meta[21].tinf->trans_table, meta[21].tinf->uses_sd);
   sprintf(meta[22].desc, "%d|%s|%s|%.1f|%d|%d", 22,
           "Halorubrum_lacusprofundi_ATCC_49239",
-          "B", 57.14, meta[22].tinf->trans_table, meta[22].tinf->uses_sd);
+          "A", 57.14, meta[22].tinf->trans_table, meta[22].tinf->uses_sd);
   sprintf(meta[23].desc, "%d|%s|%s|%.1f|%d|%d", 23,
           "Hyperthermus_butylicus_DSM_5456",
-          "B", 53.74, meta[23].tinf->trans_table, meta[23].tinf->uses_sd);
+          "A", 53.74, meta[23].tinf->trans_table, meta[23].tinf->uses_sd);
   sprintf(meta[24].desc, "%d|%s|%s|%.1f|%d|%d", 24,
           "Ignisphaera_aggregans_DSM_17230",
-          "B", 35.69, meta[24].tinf->trans_table, meta[24].tinf->uses_sd);
+          "A", 35.69, meta[24].tinf->trans_table, meta[24].tinf->uses_sd);
   sprintf(meta[25].desc, "%d|%s|%s|%.1f|%d|%d", 25,
           "Marinobacter_aquaeolei_VT8",
           "B", 57.27, meta[25].tinf->trans_table, meta[25].tinf->uses_sd);
   sprintf(meta[26].desc, "%d|%s|%s|%.1f|%d|%d", 26,
           "Methanopyrus_kandleri_AV19",
-          "B", 61.16, meta[26].tinf->trans_table, meta[26].tinf->uses_sd);
+          "A", 61.16, meta[26].tinf->trans_table, meta[26].tinf->uses_sd);
   sprintf(meta[27].desc, "%d|%s|%s|%.1f|%d|%d", 27,
           "Methanosphaerula_palustris_E1_9c",
-          "B", 55.35, meta[27].tinf->trans_table, meta[27].tinf->uses_sd);
+          "A", 55.35, meta[27].tinf->trans_table, meta[27].tinf->uses_sd);
   sprintf(meta[28].desc, "%d|%s|%s|%.1f|%d|%d", 28,
           "Methanothermobacter_thermautotrophicus_Delta_H",
           "B", 49.54, meta[28].tinf->trans_table, meta[28].tinf->uses_sd);
@@ -171,7 +170,7 @@ void initialize_metagenomic_bins(struct _metagenomic_bin *meta) {
           "B", 57.80, meta[30].tinf->trans_table, meta[30].tinf->uses_sd);
   sprintf(meta[31].desc, "%d|%s|%s|%.1f|%d|%d", 31,
           "Natrialba_magadii_ATCC_43099",
-          "B", 61.42, meta[31].tinf->trans_table, meta[31].tinf->uses_sd);
+          "A", 61.42, meta[31].tinf->trans_table, meta[31].tinf->uses_sd);
   sprintf(meta[32].desc, "%d|%s|%s|%.1f|%d|%d", 32,
           "Orientia_tsutsugamushi_Boryong",
           "B", 30.53, meta[32].tinf->trans_table, meta[32].tinf->uses_sd);
@@ -183,7 +182,7 @@ void initialize_metagenomic_bins(struct _metagenomic_bin *meta) {
           "B", 50.74, meta[34].tinf->trans_table, meta[34].tinf->uses_sd);
   sprintf(meta[35].desc, "%d|%s|%s|%.1f|%d|%d", 35,
           "Pyrobaculum_aerophilum_IM2",
-          "B", 51.36, meta[35].tinf->trans_table, meta[35].tinf->uses_sd);
+          "A", 51.36, meta[35].tinf->trans_table, meta[35].tinf->uses_sd);
   sprintf(meta[36].desc, "%d|%s|%s|%.1f|%d|%d", 36,
           "Ralstonia_solanacearum_PSI07",
           "B", 66.13, meta[36].tinf->trans_table, meta[36].tinf->uses_sd);
@@ -210,7 +209,7 @@ void initialize_metagenomic_bins(struct _metagenomic_bin *meta) {
           "B", 58.45, meta[43].tinf->trans_table, meta[43].tinf->uses_sd);
   sprintf(meta[44].desc, "%d|%s|%s|%.1f|%d|%d", 44,
           "Thermoplasma_volcanium_GSS1",
-          "B", 39.92, meta[44].tinf->trans_table, meta[44].tinf->uses_sd);
+          "A", 39.92, meta[44].tinf->trans_table, meta[44].tinf->uses_sd);
   sprintf(meta[45].desc, "%d|%s|%s|%.1f|%d|%d", 45,
           "Treponema_pallidum_Nichols",
           "B", 52.77, meta[45].tinf->trans_table, meta[45].tinf->uses_sd);
