@@ -10,14 +10,12 @@ and rules.  Upped the number of training files to 50.
 running on all training files within a given range of GC content.
 * Fixed a bug where Prodigal incorrectly reported "Piped input detected..."
 when there was no piped input.
-* Changed the protein/nucleotide translation output to report the first word
-of the FASTA header in the first field without additional ID information
-attached.
 * Changed the output function not to replace header names unless the header
 is empty (formerly replaced headers <4 letters in length).
 * Changed the output function to report the first word of headers in GFF/
 Genbank outputs as is, without checking for GFF3 characters that need to be
 escaped.
+* Eliminated the sequence number from the protein translation/mrna outputs.
 * Fixed a bug in protein translation where N's in the nucleotide sequence
 were being translated to P's instead of X's.
 

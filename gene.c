@@ -440,7 +440,7 @@ void write_translations(FILE *fh, struct _gene *genes, int ng, struct
 
   for(i = 0; i < ng; i++) {
     if(nod[genes[i].start_ndx].strand == 1) {
-      fprintf(fh, ">%s # %d # %d # 1 # %s\n", short_hdr,
+      fprintf(fh, ">%s_%d # %d # %d # 1 # %s\n", short_hdr, i+1,
               genes[i].begin, genes[i].end, genes[i].gene_data);
       for(j = genes[i].begin; j < genes[i].end; j+=3) {
         if(is_n(useq, j-1) == 1 || is_n(useq, j) == 1 || is_n(useq, j+1) == 1) 
@@ -452,7 +452,7 @@ void write_translations(FILE *fh, struct _gene *genes, int ng, struct
       if((j-genes[i].begin)%180 != 0) fprintf(fh, "\n");
     }
     else {
-      fprintf(fh, ">%s # %d # %d # -1 # %s\n", short_hdr,
+      fprintf(fh, ">%s_%d # %d # %d # -1 # %s\n", short_hdr, i+1,
               genes[i].begin, genes[i].end, genes[i].gene_data);
       for(j = slen+1-genes[i].end; j < slen+1-genes[i].begin; j+=3) {
         if(is_n(useq, slen-j) == 1 || is_n(useq, slen-1-j) == 1 ||
@@ -476,7 +476,7 @@ void write_nucleotide_seqs(FILE *fh, struct _gene *genes, int ng, struct
 
   for(i = 0; i < ng; i++) {
     if(nod[genes[i].start_ndx].strand == 1) {
-      fprintf(fh, ">%s # %d # %d # 1 # %s\n", short_hdr,
+      fprintf(fh, ">%s_%d # %d # %d # 1 # %s\n", short_hdr, i+1,
               genes[i].begin, genes[i].end, genes[i].gene_data);
       for(j = genes[i].begin-1; j < genes[i].end; j++) {
         if(is_a(seq, j) == 1) fprintf(fh, "A");
@@ -489,7 +489,7 @@ void write_nucleotide_seqs(FILE *fh, struct _gene *genes, int ng, struct
       if((j-genes[i].begin+1)%70 != 0) fprintf(fh, "\n");
     }
     else {
-      fprintf(fh, ">%s # %d # %d # -1 # %s\n", short_hdr,
+      fprintf(fh, ">%s_%d # %d # %d # -1 # %s\n", short_hdr, i+1,
               genes[i].begin, genes[i].end, genes[i].gene_data);
       for(j = slen-genes[i].end; j < slen+1-genes[i].begin; j++) {
         if(is_a(rseq, j) == 1) fprintf(fh, "A");
